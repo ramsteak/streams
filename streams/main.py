@@ -329,14 +329,20 @@ class Stream(Generic[_T]):
         return self
 
     def replace_with(
-        self, __when: Callable[[_T], bool], __with: Callable[[_T], _R]
+        self, __with: Callable[[_T], _R], __when: Callable[[_T], bool] = lambda _: True
     ) -> Stream[_T | _R]:
         def loop(__iter: Iterable[_T]) -> Iterable[_T]:
             try:
                 it = iter(__iter)
                 while True:
                     nx = _next(it)
-                    yield __with(nx) if __when(nx) else nx
+                    try:
+                        if __when(nx):
+                            yield __with(nx)
+                        else:
+                            yield nx
+                    except Exception as E:
+                        yield StreamException(E, nx)
             except StopIteration:
                 return
 
@@ -393,7 +399,10 @@ class Stream(Generic[_T]):
                         elif todo == "replace":
                             yield __with
                         elif todo == "with":
-                            yield __with(nx.val)
+                            try:
+                                yield __with(nx.val)
+                            except Exception as E:
+                                yield StreamException(E, nx.val)
                         else:
                             return  # 'stop'
                     else:
