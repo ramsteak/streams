@@ -239,6 +239,16 @@ class Stream(Generic[_T]):
         return cls(loop(), Len.INF)
 
     @classmethod
+    def fibonacci(cls) -> Stream[int]:
+        def loop():
+            a, b = 0, 1
+            while True:
+                yield a
+                a, b = b, a + b
+
+        return cls(loop(), Len.INF)
+
+    @classmethod
     def empty(cls) -> Stream:
         """The method generates an empty stream."""
         return cls([], Len.FIN)
@@ -820,22 +830,6 @@ class Stream(Generic[_T]):
 
         self.__iter = loop(self.__iter)
         return self
-
-    # @overload
-    # def exc(
-    #     self, exc: Exception, todo: Literal["replace"], /, __with: _R
-    # ) -> Stream[_T | _R]:
-    #     ...
-
-    # @overload
-    # def exc(
-    #     self, exc: Exception, todo: Literal["with"], /, __with: Callable[[_T], _R]
-    # ) -> Stream[_T | _R]:
-    #     ...
-
-    # @overload
-    # def exc(self, exc: Exception, todo: Literal["stop", "continue"], /) -> Stream[_T]:
-    #     ...
 
     def exc(
         self,
