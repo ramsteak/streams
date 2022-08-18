@@ -365,6 +365,24 @@ class Stream(Generic[_T]):
         self.__iter = loop(self.__iter)
         return self
 
+    def _eval(self, __func: Callable[[_T], _R]) -> Stream[_R]:
+        """Eval method to catch BaseException. Not recommended"""
+
+        def loop(__iter: Iterable[_T]) -> Iterable[_T]:
+            try:
+                it = iter(__iter)
+                while True:
+                    nx = _next(it)
+                    try:
+                        yield __func(nx)
+                    except BaseException as E:
+                        yield StreamException(E, nx)
+            except StopIteration:
+                return
+
+        self.__iter = loop(self.__iter)
+        return self
+
     # @overload
     # def exc(
     #     self, exc: Exception, todo: Literal["replace"], /, __with: _R
