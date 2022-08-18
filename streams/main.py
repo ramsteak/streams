@@ -48,9 +48,24 @@ class Len(Enum):
     UNK = 0
     FIN = 1
 
+    def __lt__(self: Len, __other: Len) -> bool:
+        if self.__class__ is __other.__class__:
+            return self.value < __other.value
+
+
+def min_length(*streams: Stream[Any]) -> Len:
+    """Returns the minimun Len enum for the given streams."""
+    # -1 is infinite, so min() -> maximum, max() -> minimum
+    return max(stream.length for stream in streams)
+
+
+def max_length(*streams: Stream[Any]) -> Len:
+    """Returns the maximum Len enum for the given streams."""
+    return min(stream.length for stream in streams)
+
 
 def _next(__i: Iterable[_T]) -> _T:
-    """Wrapper for python next(__i) with check for StreamExceptions"""
+    """Wrapper for python next(__i) with check for StreamExceptions."""
     nx = next(__i)
     if isinstance(nx, StreamException):
         raise nx.exc
@@ -58,7 +73,7 @@ def _next(__i: Iterable[_T]) -> _T:
 
 
 class Stream(Generic[_T]):
-    """Class to utilize Java-like object streams in python
+    """Class to utilize Java-like object streams in python.
     Example usage:
     >>> Stream([1,2,3,4,5]) -> <1,2,3,4,5>
     >>> Stream.range(4)    -> <0,1,2,3>
@@ -67,8 +82,7 @@ class Stream(Generic[_T]):
     Stream methods can be chained.
     Evaluation is inherently lazy, only evaluating and consuming the stream when
     required. It is therefore possible to use infinite data streams.
-    Some methods require the stream to be finite (such as Stream.last())
-    """
+    Some methods require the stream to be finite (such as Stream.last())."""
 
     def __init__(self, __iter: Iterable[_T], length: Len = None) -> None:
         """The method generates a stream object from any iterable, consuming it
@@ -90,6 +104,10 @@ class Stream(Generic[_T]):
                 self.__length = Len.UNK
         else:
             self.__length = length
+
+    @property
+    def length(self) -> Len:
+        return self.__length
 
     # Class methods for special streams
 
@@ -147,7 +165,7 @@ class Stream(Generic[_T]):
         cls, __func: Callable[[Any], _T], args: tuple = None, kwargs: dict = None
     ) -> Stream[_T]:
         """The methods evaluates the passed function every time in order to generate
-        the stream. Arguments to the function can be passed via args and kwargs"""
+        the stream. Arguments to the function can be passed via args and kwargs."""
         if args is None:
             args = ()
         if kwargs is None:
@@ -161,24 +179,24 @@ class Stream(Generic[_T]):
 
     @classmethod
     def repeat(cls, __val: _T) -> Stream[_T]:
-        """The method generates an infinite stream repeating the same object"""
+        """The method generates an infinite stream repeating the same object."""
         return cls.generate(lambda: __val)
 
     @classmethod
     def random(cls) -> Stream[float]:
         """The method generates an infinite stream of random values between 0 and
-        1 evaluated via the random.random method"""
+        1 evaluated via the random.random method."""
         return cls.generate(random)
 
     @classmethod
     def randint(cls, a: int, b: int) -> Stream[int]:
         """The method generates an infinite stream of random integers between a
-        and b with the randint function"""
+        and b with the randint function."""
         return cls.generate(randint, (a, b))
 
     @classmethod
     def randbool(cls) -> Stream[bool]:
-        """The method generates an infinite stream of random bools"""
+        """The method generates an infinite stream of random bools."""
         return cls.generate(randint, (0, 1)).eval(bool)
 
     @classmethod
@@ -219,7 +237,7 @@ class Stream(Generic[_T]):
 
     @classmethod
     def empty(cls) -> Stream:
-        """The method generates an empty stream"""
+        """The method generates an empty stream."""
         return cls([], Len.FIN)
 
     # Class methods to operate with streams
@@ -228,19 +246,47 @@ class Stream(Generic[_T]):
     def zip(cls, *streams: Stream[_T], strict: bool = False) -> Stream[_T]:
         """The method joins multiple streams with the zip python method, returning
         a new stream of tuples. The stream ends when the first stream ends.
-        If strict is set then ValueError is raised if one stream ends before the others"""
-        return cls(zip(*streams, strict=strict))
+        If strict is set then ValueError is raised if one stream ends before the others."""
+        return cls(zip(*streams, strict=strict), min_length(*streams))
 
     @classmethod
     def zip_longest(cls, *streams: Stream[_T], fillvalue: Any = None) -> Stream[_T]:
         """The method joins multiple streams with the zip_longest python method,
         returning a new stream of tuples. The stream ends when the last stream ends.
         Streams that end first are continued with fillvalue."""
-        return cls(zip_longest(*streams, fillvalue=fillvalue))
+        return cls(zip_longest(*streams, fillvalue=fillvalue), max_length(*streams))
 
-    # @classmethod
-    # def round_robin(cls, *streams: Stream[_T], strict: bool = False) -> Stream[_T]:
-    #     ...
+    @classmethod
+    def round_robin(cls, *streams: Stream[_T], strict: bool = False) -> Stream[_T]:
+        """The method interlaces multiple streams in an alternating fashion, stopping
+        when the first stream is exhausted. If strict is set then ValueError is raised
+        if one stream ends before the others."""
+
+        def loop(*streams: Stream[_T]) -> Stream[_T]:
+            for values in zip(*streams, strict=strict):
+                yield from values
+
+        return cls(loop(*streams), min_length(*streams))
+
+    NoFillValue = object()
+
+    @classmethod
+    def round_robin_longest(
+        cls, *streams: Stream[_T], fillvalue: Any = NoFillValue
+    ) -> Stream[_T]:
+        """The method interlaces multiple streams in an alternating fashion, stopping
+        when the last stream is exhausted. fillvalue can be set to any value. If
+        left at the default no fillvalue is returned, yielding a stream containing
+        only the values of the original streams."""
+
+        def loop(*streams: Stream[_T]) -> Iterable[_T]:
+            for values in zip_longest(*streams, fillvalue=fillvalue):
+                yield from values
+
+        return cls(
+            (e for e in loop(*streams) if e is not Stream.NoFillValue),
+            max_length(*streams),
+        )
 
     @classmethod
     def operate(
@@ -251,7 +297,7 @@ class Stream(Generic[_T]):
     ) -> Stream[_R]:
         """The method operates between the elements of multiple streams with the
         operator function. The elements are passed to the operator individually.
-        Note: to use functions such as sum, which expects an iterable, use operate_iter"""
+        Note: to use functions such as sum, which expects an iterable, use operate_iter."""
         return Stream.zip(*streams, strict=strict).eval(lambda x: operator(*x))
 
     @classmethod
@@ -270,7 +316,7 @@ class Stream(Generic[_T]):
     def filter(self, __key: Callable[[_T], bool], keep_if: bool = True) -> Stream[_T]:
         """The method iterates through the stream evaluating each element via the
         __key function. All values which do not return the same value as keep_if
-        are discarded"""
+        are discarded."""
 
         def loop(__iter: Iterable[_T]) -> Iterable[_T]:
             try:
@@ -316,7 +362,7 @@ class Stream(Generic[_T]):
 
     def skip(self, count: int) -> Stream[_T]:
         """The method allows to skip a number of items, resuming the stream after
-        the specified amount"""
+        the specified amount."""
 
         def loop(__iter: Iterable[_T]) -> Iterable[_T]:
             try:
@@ -333,7 +379,7 @@ class Stream(Generic[_T]):
         return self
 
     def limit(self, count: int) -> Stream[_T]:
-        """The method cuts the stream after the specified amount of item is yielded"""
+        """The method cuts the stream after the specified amount of item is yielded."""
         self.__length = Len.FIN
 
         def loop(__iter: Iterable[_T]) -> Iterable[_T]:
@@ -378,7 +424,7 @@ class Stream(Generic[_T]):
     def distinct(self) -> Stream[_T]:
         """The method removes all elements that repeat in the stream. It is to be
         noted that it uses a set to cache the elements, therefore the elements must
-        be hashable"""
+        be hashable."""
         if self.__length == Len.INF:
             raise UnlimitedStreamException
 
@@ -418,7 +464,7 @@ class Stream(Generic[_T]):
         return self
 
     def replace(self, __old: _T, __new: _R) -> Stream[_T | _R]:
-        """The method replaces every instance of __old with __new"""
+        """The method replaces every instance of __old with __new."""
 
         def loop(__iter: Iterable[_T]) -> Iterable[_T]:
             try:
@@ -484,7 +530,7 @@ class Stream(Generic[_T]):
         return self
 
     def _eval(self, __func: Callable[[_T], _R]) -> Stream[_R]:
-        """Eval method to catch BaseException. Not recommended"""
+        """Eval method to catch BaseException. Not recommended."""
 
         def loop(__iter: Iterable[_T]) -> Iterable[_T]:
             try:
@@ -530,7 +576,7 @@ class Stream(Generic[_T]):
          - continue -> the element that raises the exception gets skipped
          - replace -> the element is replaced by the item specified as __with
          - with -> the element is replaced by the result of the __with function
-         with the original element (before the eval)"""
+         with the original element (before the eval)."""
         if todo not in ("stop", "continue", "with", "replace"):
             raise ValueError
 
@@ -559,12 +605,6 @@ class Stream(Generic[_T]):
         self.__iter = loop(self.__iter)
         return self
 
-    # def zip(self, __other: Stream[_T1]) -> Stream[tuple[_T, _T1]]:
-    #     self.__length = min(self.__length, __other.__length)
-    #     self.__iter = zip(self._loop(), __other._loop())
-
-    # Operations to consume the data items
-
     def _loop(self) -> Iterable[_T]:
         try:
             it = iter(self.__iter)
@@ -578,27 +618,28 @@ class Stream(Generic[_T]):
 
     def list(self) -> list[_T]:
         """The method consumes the stream and returns a list with the items of the
-        stream"""
+        stream."""
         if self.__length == Len.INF:
             raise UnlimitedStreamException
         return list(self._loop())
 
     def tuple(self) -> tuple[_T]:
         """The method consumes the stream and returns a tuple with the items of the
-        stream"""
+        stream."""
         if self.__length == Len.INF:
             raise UnlimitedStreamException
         return tuple(self._loop())
 
     def set(self) -> set[_T]:
         """The method consumes the stream and returns a set with the items of the
-        stream"""
+        stream."""
         if self.__length == Len.INF:
             raise UnlimitedStreamException
         return set(self._loop())
 
     def null(self) -> None:
-        """The method consumes the stream, returning nothing"""
+        """The method consumes the stream, returning nothing.
+        Useful to debug (Stream.print does not print until consumed)."""
         if self.__length == Len.INF:
             raise UnlimitedStreamException
         try:
@@ -761,11 +802,11 @@ class Stream(Generic[_T]):
         return f"{pre}{sep.join(frm.format(e) for e in self)}{end}"
 
     def __repr__(self) -> str:
-        """The method implements the default python repr function"""
+        """The method implements the default python repr function."""
         return self.__format__(DEFAULT_REPR_FORMAT)
 
     def __str__(self) -> str:
-        """The method implements the default python str function"""
+        """The method implements the default python str function."""
         return self.__format__(DEFAULT_FORMAT)
 
     # Miscellaneous
@@ -779,7 +820,7 @@ class Stream(Generic[_T]):
          - length = 1  : finite length
          - length = 0  : unknown length
          - length = -1 : infinite length"""
-        if length not in (1, 0, -1):
+        if length not in Len:
             raise ValueError
         self.__length = length
         return self
