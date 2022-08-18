@@ -569,6 +569,10 @@ class Stream(Generic[_T]):
                 out += end
                 print(out)
                 return
+            except GeneratorExit:
+                out += sep + "..." + end
+                print(out)
+                return
 
         self.__iter = loop(self.__iter)
         return self
