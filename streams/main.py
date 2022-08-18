@@ -590,6 +590,10 @@ class Stream(Generic[_T]):
         except StopIteration:
             return nx
 
+    def join(self, sep: str = "", __key: Callable[[_T], bool] = lambda _: True) -> str:
+        """The method consumes the stream with the join method, returning the result."""
+        return sep.join(e for e in self._loop() if __key(e))
+
     def sum(self, __key: Callable[[_T], bool] = lambda _: True) -> _T:
         """The method consumes the stream with the sum method, returning the result."""
         if self.__length == Len.INF:
