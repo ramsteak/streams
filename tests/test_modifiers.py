@@ -39,8 +39,3 @@ def test_enumerate() -> None:
 def test_replace() -> None:
     stream = Stream.range(8).replace(5, 4)
     assert str(stream) == "<0, 1, 2, 3, 4, 4, 6, 7>"
-
-
-def test_replace_with() -> None:
-    stream = Stream.range(5).replace_with(lambda x: x % 2, str)
-    assert repr(stream) == "<0, '1', 2, '3', 4>"
