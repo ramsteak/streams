@@ -820,7 +820,7 @@ class Stream(Generic[_T]):
          - length = 1  : finite length
          - length = 0  : unknown length
          - length = -1 : infinite length"""
-        if length not in Len:
+        if length not in Len.__members__.values():
             raise ValueError
         self.__length = length
         return self
