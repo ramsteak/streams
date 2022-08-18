@@ -39,3 +39,17 @@ def test_enumerate() -> None:
 def test_replace() -> None:
     stream = Stream.range(8).replace(5, 4)
     assert str(stream) == "<0, 1, 2, 3, 4, 4, 6, 7>"
+
+
+def test_all_of_them() -> None:
+    stream = (
+        Stream.range(100)
+        .filter(lambda x: x % 2)
+        .slice(2, 40, 2)
+        .skip(5)
+        .limit(5)
+        .distinct()
+        .replace(15, -1)
+        .enumerate()
+    )
+    assert str(stream) == "<(0, 25), (1, 29), (2, 33), (3, 37), (4, 41)>"

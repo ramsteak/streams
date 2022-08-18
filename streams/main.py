@@ -1,6 +1,6 @@
 from __future__ import annotations
 from enum import Enum
-from itertools import count
+from itertools import count, zip_longest
 from math import sqrt
 from random import randint, random
 from re import compile, RegexFlag
@@ -92,6 +92,7 @@ class Stream(Generic[_T]):
             self.__length = length
 
     # Class methods for special streams
+
     @overload
     @classmethod
     def range(cls, __stop: SupportsIndex, /) -> Stream[int]:
@@ -220,6 +221,49 @@ class Stream(Generic[_T]):
     def empty(cls) -> Stream:
         """The method generates an empty stream"""
         return cls([], Len.FIN)
+
+    # Class methods to operate with streams
+
+    @classmethod
+    def zip(cls, *streams: Stream[_T], strict: bool = False) -> Stream[_T]:
+        """The method joins multiple streams with the zip python method, returning
+        a new stream of tuples. The stream ends when the first stream ends.
+        If strict is set then ValueError is raised if one stream ends before the others"""
+        return cls(zip(*streams, strict=strict))
+
+    @classmethod
+    def zip_longest(cls, *streams: Stream[_T], fillvalue: Any = None) -> Stream[_T]:
+        """The method joins multiple streams with the zip_longest python method,
+        returning a new stream of tuples. The stream ends when the last stream ends.
+        Streams that end first are continued with fillvalue."""
+        return cls(zip_longest(*streams, fillvalue=fillvalue))
+
+    # @classmethod
+    # def round_robin(cls, *streams: Stream[_T], strict: bool = False) -> Stream[_T]:
+    #     ...
+
+    @classmethod
+    def operate(
+        cls,
+        operator: Callable[[_T, _T], _R],
+        *streams: Stream[_T],
+        strict: bool = False,
+    ) -> Stream[_R]:
+        """The method operates between the elements of multiple streams with the
+        operator function. The elements are passed to the operator individually.
+        Note: to use functions such as sum, which expects an iterable, use operate_iter"""
+        return Stream.zip(*streams, strict=strict).eval(lambda x: operator(*x))
+
+    @classmethod
+    def operate_iter(
+        cls,
+        operator: Callable[[_T, _T], _R],
+        *streams: Stream[_T],
+        strict: bool = False,
+    ) -> Stream[_R]:
+        """The method operates between the elements of multiple streams with the
+        operator function. The elements are passed to the operator as a tuple."""
+        return Stream.zip(*streams, strict=strict).eval(lambda x: operator(x))
 
     # Operations to limit the data items
 
@@ -515,9 +559,9 @@ class Stream(Generic[_T]):
         self.__iter = loop(self.__iter)
         return self
 
-    def zip(self, __other: Stream[_T1]) -> Stream[tuple[_T, _T1]]:
-        self.__length = min(self.__length, __other.__length)
-        self.__iter = zip(self._loop(), __other._loop())
+    # def zip(self, __other: Stream[_T1]) -> Stream[tuple[_T, _T1]]:
+    #     self.__length = min(self.__length, __other.__length)
+    #     self.__iter = zip(self._loop(), __other._loop())
 
     # Operations to consume the data items
 
