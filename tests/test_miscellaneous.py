@@ -27,6 +27,7 @@ def test_max_length() -> None:
     assert max_length(stream_UNK, stream_UNK) == Len.UNK
     assert max_length(stream_FIN, stream_FIN) == Len.FIN
 
+
 def test_length_override() -> None:
     stream = Stream.empty()
     pytest.raises(ValueError, stream._length_override, 1)
