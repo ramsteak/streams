@@ -564,7 +564,9 @@ class Stream(Generic[_T]):
         except StopIteration:
             return
 
-    def first(self, __key: Callable[[_T], bool] = lambda _: True, default: _T = None) -> _T:
+    def first(
+        self, __key: Callable[[_T], bool] = lambda _: True, default: _T = None
+    ) -> _T:
         """The method consumes the first item of the stream, returning it. If the
         stream is empty the default item is returned."""
         try:

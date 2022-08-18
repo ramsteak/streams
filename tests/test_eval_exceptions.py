@@ -48,19 +48,20 @@ def test_eval_exception_uncaught() -> None:
 
 
 def test_replace_exception_uncaught() -> None:
-    stream = Stream.range(2).replace_with(lambda x:1/x, lambda _:True)
+    stream = Stream.range(2).replace_with(lambda x: 1 / x, lambda _: True)
     pytest.raises(ZeroDivisionError, stream.list)
 
 
 def test_eval_exception_in_exc() -> None:
-    stream = (
-        Stream.range(2).eval(lambda x: 1 / x).exc(ZeroDivisionError, "replace", 1)
-    )
+    stream = Stream.range(2).eval(lambda x: 1 / x).exc(ZeroDivisionError, "replace", 1)
     assert str(stream) == "<1, 1.0>"
+
 
 def test_replace_exception_in_exc() -> None:
     stream = (
-        Stream.range(2).replace_with(lambda x: 1 / x).exc(ZeroDivisionError, "replace", 1)
+        Stream.range(2)
+        .replace_with(lambda x: 1 / x)
+        .exc(ZeroDivisionError, "replace", 1)
     )
     assert str(stream) == "<1, 1.0>"
 
