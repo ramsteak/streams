@@ -25,6 +25,9 @@ except ImportError:
 
 _T = TypeVar("_T")
 _T1 = TypeVar("_T1")
+_T2 = TypeVar("_T2")
+_T3 = TypeVar("_T3")
+_T4 = TypeVar("_T4")
 _R = TypeVar("_R")
 _H = TypeVar("_H", Hashable, Any)
 
@@ -242,6 +245,59 @@ class Stream(Generic[_T]):
 
     # Class methods to operate with streams
 
+    @overload
+    @classmethod
+    def zip(cls, stream: Stream[_T], strict: bool = False) -> Stream[tuple[_T]]:
+        ...
+
+    @overload
+    @classmethod
+    def zip(
+        cls, stream: Stream[_T], stream1: Stream[_T1], strict: bool = False
+    ) -> Stream[tuple[_T, _T1]]:
+        ...
+
+    @overload
+    @classmethod
+    def zip(
+        cls,
+        stream: Stream[_T],
+        stream1: Stream[_T1],
+        stream2: Stream[_T2],
+        strict: bool = False,
+    ) -> Stream[tuple[_T, _T1, _T2]]:
+        ...
+
+    @overload
+    @classmethod
+    def zip(
+        cls,
+        stream: Stream[_T],
+        stream1: Stream[_T1],
+        stream2: Stream[_T2],
+        stream3: Stream[_T3],
+        strict: bool = False,
+    ) -> Stream[tuple[_T, _T1, _T2, _T3]]:
+        ...
+
+    @overload
+    @classmethod
+    def zip(
+        cls,
+        stream: Stream[_T],
+        stream1: Stream[_T1],
+        stream2: Stream[_T2],
+        stream3: Stream[_T3],
+        stream4: Stream[_T4],
+        strict: bool = False,
+    ) -> Stream[tuple[_T, _T1, _T2, _T3, _T4]]:
+        ...
+
+    @overload
+    @classmethod
+    def zip(cls, *streams: Stream[_T], strict: bool = False) -> Stream[_T]:
+        ...
+
     @classmethod
     def zip(cls, *streams: Stream[_T], strict: bool = False) -> Stream[_T]:
         """The method joins multiple streams with the zip python method, returning
@@ -249,12 +305,123 @@ class Stream(Generic[_T]):
         If strict is set then ValueError is raised if one stream ends before the others."""
         return cls(zip(*streams, strict=strict), min_length(*streams))
 
+    @overload
     @classmethod
-    def zip_longest(cls, *streams: Stream[_T], fillvalue: Any = None) -> Stream[_T]:
+    def zip_longest(
+        cls, stream: Stream[_T], fillvalue: _R = None
+    ) -> Stream[tuple[_T | _R]]:
+        ...
+
+    @overload
+    @classmethod
+    def zip_longest(
+        cls, stream: Stream[_T], stream1: Stream[_T1], fillvalue: _R = None
+    ) -> Stream[tuple[_T | _R, _T1 | _R]]:
+        ...
+
+    @overload
+    @classmethod
+    def zip_longest(
+        cls,
+        stream: Stream[_T],
+        stream1: Stream[_T1],
+        stream2: Stream[_T2],
+        fillvalue: _R = None,
+    ) -> Stream[tuple[_T | _R, _T1 | _R, _T2 | _R]]:
+        ...
+
+    @overload
+    @classmethod
+    def zip_longest(
+        cls,
+        stream: Stream[_T],
+        stream1: Stream[_T1],
+        stream2: Stream[_T2],
+        stream3: Stream[_T3],
+        fillvalue: _R = None,
+    ) -> Stream[tuple[_T | _R, _T1 | _R, _T2 | _R, _T3 | _R]]:
+        ...
+
+    @overload
+    @classmethod
+    def zip_longest(
+        cls,
+        stream: Stream[_T],
+        stream1: Stream[_T1],
+        stream2: Stream[_T2],
+        stream3: Stream[_T3],
+        stream4: Stream[_T4],
+        fillvalue: _R = None,
+    ) -> Stream[tuple[_T | _R, _T1 | _R, _T2 | _R, _T3 | _R, _T4 | _R]]:
+        ...
+
+    @overload
+    @classmethod
+    def zip_longest(cls, *streams: Stream[_T], fillvalue: _R = None) -> Stream[_T | _R]:
+        ...
+
+    @classmethod
+    def zip_longest(cls, *streams: Stream[_T], fillvalue: _R = None) -> Stream[_T | _R]:
         """The method joins multiple streams with the zip_longest python method,
         returning a new stream of tuples. The stream ends when the last stream ends.
         Streams that end first are continued with fillvalue."""
         return cls(zip_longest(*streams, fillvalue=fillvalue), max_length(*streams))
+
+    @overload
+    @classmethod
+    def round_robin(cls, stream: Stream[_T], *, strict: bool = False) -> Stream[_T]:
+        ...
+
+    @overload
+    @classmethod
+    def round_robin(
+        cls, stream: Stream[_T], stream1: Stream[_T1], *, strict: bool = False
+    ) -> Stream[_T | _T1]:
+        ...
+
+    @overload
+    @classmethod
+    def round_robin(
+        cls,
+        stream: Stream[_T],
+        stream1: Stream[_T1],
+        stream2: Stream[_T2],
+        *,
+        strict: bool = False,
+    ) -> Stream[_T | _T1 | _T2]:
+        ...
+
+    @overload
+    @classmethod
+    def round_robin(
+        cls,
+        stream: Stream[_T],
+        stream1: Stream[_T1],
+        stream2: Stream[_T2],
+        stream3: Stream[_T3],
+        *,
+        strict: bool = False,
+    ) -> Stream[_T | _T1 | _T2 | _T3]:
+        ...
+
+    @overload
+    @classmethod
+    def round_robin(
+        cls,
+        stream: Stream[_T],
+        stream1: Stream[_T1],
+        stream2: Stream[_T2],
+        stream3: Stream[_T3],
+        stream4: Stream[_T4],
+        *,
+        strict: bool = False,
+    ) -> Stream[_T | _T1 | _T2 | _T3 | _T4]:
+        ...
+
+    @overload
+    @classmethod
+    def round_robin(cls, *streams: Stream[_T], strict: bool = False) -> Stream[_T]:
+        ...
 
     @classmethod
     def round_robin(cls, *streams: Stream[_T], strict: bool = False) -> Stream[_T]:
@@ -270,9 +437,116 @@ class Stream(Generic[_T]):
 
     NoFillValue = object()
 
+    @overload
     @classmethod
     def round_robin_longest(
-        cls, *streams: Stream[_T], fillvalue: Any = NoFillValue
+        cls, stream: Stream[_T], *, fillvalue: _R
+    ) -> Stream[_T | _R]:
+        ...
+
+    @overload
+    @classmethod
+    def round_robin_longest(
+        cls, stream: Stream[_T], stream1: Stream[_T1], *, fillvalue: _R
+    ) -> Stream[_T | _T1 | _R]:
+        ...
+
+    @overload
+    @classmethod
+    def round_robin_longest(
+        cls,
+        stream: Stream[_T],
+        stream1: Stream[_T1],
+        stream2: Stream[_T2],
+        *,
+        fillvalue: _R,
+    ) -> Stream[_T | _T1 | _T2 | _R]:
+        ...
+
+    @overload
+    @classmethod
+    def round_robin_longest(
+        cls,
+        stream: Stream[_T],
+        stream1: Stream[_T1],
+        stream2: Stream[_T2],
+        stream3: Stream[_T3],
+        *,
+        fillvalue: _R,
+    ) -> Stream[_T | _T1 | _T2 | _T3 | _R]:
+        ...
+
+    @overload
+    @classmethod
+    def round_robin_longest(
+        cls,
+        stream: Stream[_T],
+        stream1: Stream[_T1],
+        stream2: Stream[_T2],
+        stream3: Stream[_T3],
+        stream4: Stream[_T4],
+        *,
+        fillvalue: _R,
+    ) -> Stream[_T | _T1 | _T2 | _T3 | _T4 | _R]:
+        ...
+
+    @overload
+    @classmethod
+    def round_robin_longest(
+        cls, *streams: Stream[_T], fillvalue: _R
+    ) -> Stream[_T | _R]:
+        ...
+
+    @overload
+    @classmethod
+    def round_robin_longest(cls, stream: Stream[_T]) -> Stream[_T]:
+        ...
+
+    @overload
+    @classmethod
+    def round_robin_longest(
+        cls, stream: Stream[_T], stream1: Stream[_T1]
+    ) -> Stream[_T | _T1]:
+        ...
+
+    @overload
+    @classmethod
+    def round_robin_longest(
+        cls, stream: Stream[_T], stream1: Stream[_T1], stream2: Stream[_T2]
+    ) -> Stream[_T | _T1 | _T2]:
+        ...
+
+    @overload
+    @classmethod
+    def round_robin_longest(
+        cls,
+        stream: Stream[_T],
+        stream1: Stream[_T1],
+        stream2: Stream[_T2],
+        stream3: Stream[_T3],
+    ) -> Stream[_T | _T1 | _T2 | _T3]:
+        ...
+
+    @overload
+    @classmethod
+    def round_robin_longest(
+        cls,
+        stream: Stream[_T],
+        stream1: Stream[_T1],
+        stream2: Stream[_T2],
+        stream3: Stream[_T3],
+        stream4: Stream[_T4],
+    ) -> Stream[_T | _T1 | _T2 | _T3 | _T4]:
+        ...
+
+    @overload
+    @classmethod
+    def round_robin_longest(cls, *streams: Stream[_T]) -> Stream[_T]:
+        ...
+
+    @classmethod
+    def round_robin_longest(
+        cls, *streams: Stream[_T], fillvalue=NoFillValue
     ) -> Stream[_T]:
         """The method interlaces multiple streams in an alternating fashion, stopping
         when the last stream is exhausted. fillvalue can be set to any value. If
