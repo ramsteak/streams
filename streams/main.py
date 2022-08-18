@@ -840,3 +840,12 @@ class Stream(Generic[_T]):
         list_cache.extend(self.__iter)
         self.__iter = _copy_method(list_cache)
         return self
+
+    def reverse(self) -> Stream[_T]:
+        """The method caches the stream and stores it onto al list, and iterates
+        through it in reverse."""
+        if self.__length == Len.INF:
+            raise UnlimitedStreamException
+        list_cache = self.list()
+        self.__iter = reversed(list_cache)
+        return self

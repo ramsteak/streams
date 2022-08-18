@@ -69,9 +69,3 @@ def test_max() -> None:
 def test_split() -> None:
     stream_split = Stream.range(0, 10).split(lambda x: x % 2)
     assert str(stream_split) == "{0: <0, 2, 4, 6, 8>, 1: <1, 3, 5, 7, 9>}"
-
-
-def test_cache() -> None:
-    stream_cache = []
-    Stream.range(0, 10).cache(stream_cache)
-    assert stream_cache == [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
