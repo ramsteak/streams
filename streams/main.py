@@ -508,16 +508,40 @@ class Stream(Generic[_T]):
             raise UnlimitedStreamException
         return max(self._loop())
 
-    def split(self, __key: Callable[[_T], _H]) -> dict[list[_T]]:
+    def split(self, __key: Callable[[_T], _H]) -> dict[_H, Stream[_T]]:
+        """The method returns a dict of streams. The streams are obtained by grouping,
+        in order, all elements returning the same value when the __key function is
+        applied to them. If an exception is raised by the __key function the key is
+        obtained as such:
+         ZeroDivisionError -> __exc_ZeroDivisionError"""
         if self.__length == Len.INF:
             raise UnlimitedStreamException
         out = {}
         out: dict[_H, list[_T]]
-        for e in self._loop():
-            k = __key(e)
+        for elm in self._loop():
+            try:
+                k = __key(elm)
+            except Exception as E:
+                elm = StreamException(E, elm)
+                k = f"__exc_{E.__class__.__name__}"
             if k not in out:
                 out[k] = list()
-            out[k].append(e)
+            out[k].append(elm)
+        return {k: Stream(v) for k, v in out.items()}
+
+    def split_list(self, __key: Callable[[_T], _H]) -> dict[_H, list[_T]]:
+        """The method returns a dict of lists. The lists are obtained by grouping,
+        in order, all elements returning the same value when the __key function is
+        applied to them."""
+        if self.__length == Len.INF:
+            raise UnlimitedStreamException
+        out = {}
+        out: dict[_H, list[_T]]
+        for elm in self._loop():
+            k = __key(elm)
+            if k not in out:
+                out[k] = list()
+            out[k].append(elm)
         return out
 
     def __iter__(self) -> Iterator[_T]:
