@@ -593,10 +593,18 @@ class Stream(Generic[_T]):
         self.__length = length
         return self
 
-    def cache(self, list_cache: list[_T]) -> Stream[_T]:
+    def cache(
+        self, list_cache: list[_T], _copy_method: Callable[[list], list] = None
+    ) -> Stream[_T]:
+        """The method consumes the stream and stores it into a list which reference
+        is passed to list_cache. The list is first cleared with the list.clear()
+        method, and the stream returned uses a shallow copy of the list. To use a
+        deep copy you can change the _copy_method of the function (default: list.copy)."""
         if self.__length == Len.INF:
             raise UnlimitedStreamException
+        if _copy_method is None:
+            _copy_method = list.copy
         list_cache.clear()
         list_cache.extend(self.__iter)
-        self.__iter = list_cache.copy()
+        self.__iter = _copy_method(list_cache)
         return self
