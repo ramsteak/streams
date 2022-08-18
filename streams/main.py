@@ -359,24 +359,29 @@ class Stream(Generic[_T]):
         self.__iter = loop(self.__iter)
         return self
 
-    @overload
+    # @overload
+    # def exc(
+    #     self, exc: Exception, todo: Literal["replace"], /, __with: _R
+    # ) -> Stream[_T | _R]:
+    #     ...
+
+    # @overload
+    # def exc(
+    #     self, exc: Exception, todo: Literal["with"], /, __with: Callable[[_T], _R]
+    # ) -> Stream[_T | _R]:
+    #     ...
+
+    # @overload
+    # def exc(self, exc: Exception, todo: Literal["stop", "continue"], /) -> Stream[_T]:
+    #     ...
+
     def exc(
-        self, exc: Exception, todo: Literal["replace"], __with: _R, /
+        self,
+        exc: Exception,
+        todo: Literal["stop", "continue", "with", "replace"],
+        /,
+        __with: _R | Callable[[_T], _R] = None,
     ) -> Stream[_T | _R]:
-        ...
-
-    @overload
-    def exc(
-        self, exc: Exception, todo: Literal["with"], __with: Callable[[_T], _R], /
-    ) -> Stream[_T | _R]:
-        ...
-
-    @overload
-    def exc(self, exc: Exception, todo: Literal["stop", "continue"], /) -> Stream[_T]:
-        ...
-
-    def exc(self, exc:Exception, todo: str, __with: Any = None) -> Stream[_T]:
-
         def loop(__iter: Iterable[_T]) -> Iterable[_T]:
             try:
                 it = iter(__iter)
