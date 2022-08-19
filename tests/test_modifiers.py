@@ -2,7 +2,7 @@ from streams import Stream
 
 
 def test_filter() -> None:
-    stream = Stream.range(20).filter(lambda x: x % 2, True)
+    stream = Stream.range(20).filter(lambda x: x % 2, keep_if=True)
     assert str(stream) == "<1, 3, 5, 7, 9, 11, 13, 15, 17, 19>"
 
 
