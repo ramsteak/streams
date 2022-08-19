@@ -1,10 +1,11 @@
 # streams
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![tests](https://github.com/ramsteak/streams/actions/workflows/black-tests.yml/badge.svg)](https://github.com/ramsteak/streams/actions/workflows/black-tests.yml)
 
 ## About
 streams is a python library to use Java-like stream objects to manipulate an iterable collection lazily. In addition it offers elementwise exception handling.
 
-## Using
+## Usage
 To use the package (not yet in pypi) you have to install directly from github.
 
 ```py
