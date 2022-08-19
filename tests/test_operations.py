@@ -20,10 +20,8 @@ def test_zip_longest() -> None:
     stream_a = Stream.range(5)
     stream_b = Stream.range(5, 11)
     stream_zip_longest = Stream.zip_longest(stream_a, stream_b)
-    assert (
-        str(stream_zip_longest)
-        == "<(0, 5), (1, 6), (2, 7), (3, 8), (4, 9), (None, 10)>"
-    )
+    STREAM_RESULT = "<(0, 5), (1, 6), (2, 7), (3, 8), (4, 9), (None, 10)>"
+    assert str(stream_zip_longest) == STREAM_RESULT
 
 
 def test_round_robin() -> None:

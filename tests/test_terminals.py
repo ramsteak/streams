@@ -48,12 +48,12 @@ def test_mean() -> None:
 
 def test_all() -> None:
     stream_all = Stream.range(0, 10).all()
-    assert stream_all == False
+    assert stream_all is False
 
 
 def test_any() -> None:
     stream_any = Stream.range(0, 10).any()
-    assert stream_any == True
+    assert stream_any is True
 
 
 def test_min() -> None:

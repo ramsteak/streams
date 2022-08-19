@@ -2,7 +2,7 @@ from __future__ import annotations
 from enum import Enum
 from itertools import count, zip_longest
 from math import sqrt
-from random import randint, random
+from random import randint, random, shuffle
 from re import compile, RegexFlag
 from statistics import mean
 from typing import (
@@ -128,7 +128,7 @@ class Stream(Generic[_T]):
         >>> Stream.primes().limit(3) -> <2,3,5>"""
 
         self.__iter = _loop_enter(__iter)
-        if length == None:
+        if length is None:
             try:
                 len(self.__iter)
                 self.__length = Len.FIN
@@ -156,7 +156,11 @@ class Stream(Generic[_T]):
     @overload
     @classmethod
     def range(
-        cls, __start: SupportsIndex, __stop: SupportsIndex, __step: SupportsIndex, /
+        cls,
+        __start: SupportsIndex,
+        __stop: SupportsIndex,
+        __step: SupportsIndex,
+        /,
     ) -> Stream[int]:
         ...
 
@@ -679,7 +683,8 @@ class Stream(Generic[_T]):
                         __iter.close()
                         return
                     if i < start:
-                        continue  # Can use generator.send to mark the element as skipped, in order to .print() -> '<..., 3, 4, 5, ...>
+                        # TODO: generator.send to skip elements -> .print() -> '<..., 3, 4, ...>
+                        continue
                     if (i - start) % step == 0:
                         yield elm
             except GeneratorExit:
@@ -697,7 +702,8 @@ class Stream(Generic[_T]):
             try:
                 for i, elm in _loop_enum(__iter):
                     if i < count:
-                        continue  # Can use generator.send to mark the element as skipped, in order to .print() -> '<..., 3, 4, 5, ...>
+                        # TODO: generator.send to skip elements -> .print() -> '<..., 3, 4, ...>
+                        continue
                     yield elm
             except GeneratorExit:
                 __iter.close()
@@ -1200,6 +1206,8 @@ class Stream(Generic[_T]):
         self.__length = length
         return self
 
+    # Caching methods
+
     def cache(
         self, list_cache: list[_T], _copy_method: Callable[[list], list] = None
     ) -> Stream[_T]:
@@ -1213,7 +1221,7 @@ class Stream(Generic[_T]):
             _copy_method = list.copy
         list_cache.clear()
         list_cache.extend(self.__iter)
-        self.__iter = _copy_method(list_cache)
+        self.__iter = _loop_enter(_copy_method(list_cache))
         return self
 
     def reverse(self) -> Stream[_T]:
@@ -1222,5 +1230,14 @@ class Stream(Generic[_T]):
         if self.__length == Len.INF:
             raise UnlimitedStreamException
         list_cache = self.list()
-        self.__iter = reversed(list_cache)
+        self.__iter = _loop_enter(reversed(list_cache))
+        return self
+
+    def shuffle(self) -> Stream[_T]:
+        """The method caches the stream and stores it onto al list, and returns
+        a shuffled version of the list."""
+        if self.__length == Len.INF:
+            raise UnlimitedStreamException
+        list_cache = self.list()
+        self.__iter = _loop_enter(shuffle(list_cache))
         return self
