@@ -38,56 +38,11 @@ def test_case_6_basel_problem() -> None:
 
 def test_case_7_Fibonacci_numbers() -> None:
     stream = Stream.fibonacci().limit(20).list()
-    assert stream == [
-        0,
-        1,
-        1,
-        2,
-        3,
-        5,
-        8,
-        13,
-        21,
-        34,
-        55,
-        89,
-        144,
-        233,
-        377,
-        610,
-        987,
-        1597,
-        2584,
-        4181,
-    ]
+    STREAM_RESULT = "[0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377, 610, 987, 1597, 2584, 4181]"
+    assert str(stream) == STREAM_RESULT
 
 
 def test_case_8_prime_numbers() -> None:
     stream = Stream.primes().stop(lambda x: x > 100).list()
-    assert stream == [
-        2,
-        3,
-        5,
-        7,
-        11,
-        13,
-        17,
-        19,
-        23,
-        29,
-        31,
-        37,
-        41,
-        43,
-        47,
-        53,
-        59,
-        61,
-        67,
-        71,
-        73,
-        79,
-        83,
-        89,
-        97,
-    ]
+    STREAM_RESULT = "[2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97]"
+    assert str(stream) == STREAM_RESULT
