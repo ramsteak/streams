@@ -2,7 +2,6 @@
 _temp*.py
 .vscode/
 setup.py
-TODO.md
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
