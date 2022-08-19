@@ -58,6 +58,11 @@ def test_operate() -> None:
     stream_operate = Stream.operate(lambda x, y: x + y, stream_a, stream_b)
     assert str(stream_operate) == "<5, 7, 9, 11, 13>"
 
+def test_operate() -> None:
+    stream_a = Stream.range(5)
+    stream_b = Stream.range(5, 10)
+    stream_operate = Stream.operate_iter(sum, stream_a, stream_b)
+    assert str(stream_operate) == "<5, 7, 9, 11, 13>"
 
 def test_zip_exceptions() -> None:
     stream_a = (
