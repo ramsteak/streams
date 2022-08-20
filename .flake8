@@ -4,5 +4,4 @@ max-line-length = 120
 exclude = 
     **/_temp*
     .venv
-    tests
 max-complexity = 12
