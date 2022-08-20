@@ -8,7 +8,11 @@ streams is a python library to use Java-like stream objects to manipulate an ite
 ## Installation
 
 ```sh
-git clone https://github.com/ramsteak/streams.git
+$ git clone https://github.com/ramsteak/streams.git
+```
+```sh
+$ curl https://github.com/ramsteak/streams/releases/download/v1.0.0/streams-1.0.0-py3-none-any.whl --output streams-1.0.0-py3-none-any.whl
+$ python -m pip install streams-1.0.0-py3-none-any.whl
 ```
 
 ## Usage
