@@ -1,0 +1,16 @@
+[tool.black]
+
+[tool.pytest.ini_options]
+pythonpath = '.'
+addopts = '-qra'
+
+[tool.flake8]
+ignore = [
+    'F403',
+    'F405']
+max-line-length = 120
+exclude = [
+    '**/_temp*',
+    '.venv']
+max-complexity = 12
+count = true
