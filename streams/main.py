@@ -120,8 +120,8 @@ class Stream(Generic[_T]):
         lazily when needed. The length parameter is to be set when the length
         cannot be determined automatically (such as iterables without a __len__
         method or methods where calling __len__ would consume them). Whenever
-        possible it is recommended to prefer using the default generators,
-        such as range and count.
+        possible it is preferrable to use the default generators, such as range
+        and count.
 
         >>> Stream([1,2,3,4,5]) -> <1,2,3,4,5>
         >>> Stream.range(4)    -> <0,1,2,3>
@@ -130,7 +130,7 @@ class Stream(Generic[_T]):
         self.__iter = _loop_enter(__iter)
         if length is None:
             try:
-                len(self.__iter)
+                len(__iter)
                 self.__length = Len.FIN
             except TypeError:
                 self.__length = Len.UNK
@@ -604,6 +604,63 @@ class Stream(Generic[_T]):
             (e for e in loop(*streams) if e is not Stream.NoFillValue),
             max_length(*streams),
         )
+
+    @overload
+    @classmethod
+    def chain(cls, stream: Stream[_T]) -> Stream[_T]:
+        ...
+
+    @overload
+    @classmethod
+    def chain(cls, stream: Stream[_T], stream1: Stream[_T1]) -> Stream[_T | _T1]:
+        ...
+
+    @overload
+    @classmethod
+    def chain(
+        cls, stream: Stream[_T], stream1: Stream[_T1], stream2: Stream[_T2]
+    ) -> Stream[_T | _T1 | _T2]:
+        ...
+
+    @overload
+    @classmethod
+    def chain(
+        cls,
+        stream: Stream[_T],
+        stream1: Stream[_T1],
+        stream2: Stream[_T2],
+        stream3: Stream[_T3],
+    ) -> Stream[_T | _T1 | _T2 | _T3]:
+        ...
+
+    @overload
+    @classmethod
+    def chain(
+        cls,
+        stream: Stream[_T],
+        stream1: Stream[_T1],
+        stream2: Stream[_T2],
+        stream3: Stream[_T3],
+        stream4: Stream[_T4],
+    ) -> Stream[_T | _T1 | _T2 | _T3 | _T4]:
+        ...
+
+    @overload
+    @classmethod
+    def chain(cls, *streams: Stream[_T]) -> Stream[_T]:
+        ...
+
+    @classmethod
+    def chain(cls, *streams: Stream[_T]) -> Stream[_T]:
+        """The method conc"""
+        if any(stream.length == Len.INF for stream in streams[:-1]):
+            raise UnlimitedStreamException
+
+        def loop(*streams: Stream[_T]) -> Iterable[_T]:
+            for stream in streams:
+                yield from stream
+
+        return cls(loop(*streams), max_length(*streams))
 
     @classmethod
     def operate(
