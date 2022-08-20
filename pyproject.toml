@@ -14,3 +14,7 @@ exclude = [
     '.venv']
 max-complexity = 12
 count = true
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"

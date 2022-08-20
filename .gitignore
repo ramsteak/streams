@@ -1,7 +1,6 @@
 # Workspace specific files
 _temp*.py
 .vscode/
-setup.py
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
