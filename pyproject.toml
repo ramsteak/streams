@@ -2,7 +2,7 @@
 
 [tool.pytest.ini_options]
 pythonpath = '.'
-addopts = '-qra'
+addopts = '-ra'
 
 [tool.flake8]
 ignore = [
