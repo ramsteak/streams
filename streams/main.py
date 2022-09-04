@@ -136,7 +136,7 @@ class Stream(Generic[_T]):
     def length(self) -> Len:
         return self.__length
 
-    #region Class methods for special streams
+    # region Class methods for special streams
 
     @overload
     @classmethod
@@ -281,8 +281,8 @@ class Stream(Generic[_T]):
         """The method generates an empty stream."""
         return cls([], Len.FIN)
 
-    #endregion
-    #region Class methods to operate with streams
+    # endregion
+    # region Class methods to operate with streams
 
     @overload
     @classmethod
@@ -693,8 +693,8 @@ class Stream(Generic[_T]):
         operator function. The elements are passed to the operator as a tuple."""
         return Stream.zip(*streams, strict=strict).eval(lambda x: operator(x))
 
-    #endregion
-    #region Operations to limit the data items
+    # endregion
+    # region Operations to limit the data items
 
     def filter(
         self,
@@ -861,8 +861,8 @@ class Stream(Generic[_T]):
         self.__iter = loop(self.__iter)
         return self
 
-    #endregion
-    #region Operations to change the data items
+    # endregion
+    # region Operations to change the data items
 
     def enumerate(self) -> Stream[_T]:
         """The mehtod functions in the same way that the enumerate object functions
@@ -1212,8 +1212,8 @@ class Stream(Generic[_T]):
     def __iter__(self) -> Iterator[_T]:
         return _loop(self.__iter)
 
-    #endregion
-    #region Operations to output to text
+    # endregion
+    # region Operations to output to text
 
     def print(self, __format_spec: str = DEFAULT_FORMAT) -> Stream[_T]:
         """The method prints the stream by piecing together each element. The method
@@ -1258,8 +1258,8 @@ class Stream(Generic[_T]):
         """The method implements the default python str function."""
         return self.__format__(DEFAULT_FORMAT)
 
-    #endregion
-    #region Miscellaneous
+    # endregion
+    # region Miscellaneous
 
     def _length_override(self, length: Len) -> Stream[_T]:
         """The method (normally not to be used) alters the believed length of the
@@ -1275,8 +1275,8 @@ class Stream(Generic[_T]):
         self.__length = length
         return self
 
-    #endregion
-    #region Caching methods
+    # endregion
+    # region Caching methods
 
     def cache(
         self, list_cache: list[_T], _copy_method: Callable[[list], list] = None
@@ -1312,5 +1312,5 @@ class Stream(Generic[_T]):
         self.__iter = _loop_enter(shuffle(list_cache))
         return self
 
-    #endregion
+    # endregion
     ...
