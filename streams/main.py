@@ -17,6 +17,7 @@ from typing import (
     SupportsIndex,
     TypeVar,
     overload,
+    Union,
 )
 
 try:
@@ -352,14 +353,14 @@ class Stream(Generic[_T]):
     @classmethod
     def zip_longest(
         cls, stream: Stream[_T], fillvalue: _R = None
-    ) -> Stream[tuple[_T | _R]]:
+    ) -> Stream[tuple[Union[_T, _R]]]:
         ...
 
     @overload
     @classmethod
     def zip_longest(
         cls, stream: Stream[_T], stream1: Stream[_T1], fillvalue: _R = None
-    ) -> Stream[tuple[_T | _R, _T1 | _R]]:
+    ) -> Stream[tuple[Union[_T, _R], Union[_T1, _R]]]:
         ...
 
     @overload
@@ -370,7 +371,7 @@ class Stream(Generic[_T]):
         stream1: Stream[_T1],
         stream2: Stream[_T2],
         fillvalue: _R = None,
-    ) -> Stream[tuple[_T | _R, _T1 | _R, _T2 | _R]]:
+    ) -> Stream[tuple[Union[_T, _R], Union[_T1, _R], Union[_T2, _R]]]:
         ...
 
     @overload
@@ -382,7 +383,7 @@ class Stream(Generic[_T]):
         stream2: Stream[_T2],
         stream3: Stream[_T3],
         fillvalue: _R = None,
-    ) -> Stream[tuple[_T | _R, _T1 | _R, _T2 | _R, _T3 | _R]]:
+    ) -> Stream[tuple[Union[_T, _R], Union[_T1, _R], Union[_T2, _R], Union[_T3, _R]]]:
         ...
 
     @overload
@@ -395,16 +396,28 @@ class Stream(Generic[_T]):
         stream3: Stream[_T3],
         stream4: Stream[_T4],
         fillvalue: _R = None,
-    ) -> Stream[tuple[_T | _R, _T1 | _R, _T2 | _R, _T3 | _R, _T4 | _R]]:
+    ) -> Stream[
+        tuple[
+            Union[_T, _R],
+            Union[_T1, _R],
+            Union[_T2, _R],
+            Union[_T3, _R],
+            Union[_T4, _R],
+        ]
+    ]:
         ...
 
     @overload
     @classmethod
-    def zip_longest(cls, *streams: Stream[_T], fillvalue: _R = None) -> Stream[_T | _R]:
+    def zip_longest(
+        cls, *streams: Stream[_T], fillvalue: _R = None
+    ) -> Stream[Union[_T, _R]]:
         ...
 
     @classmethod
-    def zip_longest(cls, *streams: Stream[_T], fillvalue: _R = None) -> Stream[_T | _R]:
+    def zip_longest(
+        cls, *streams: Stream[_T], fillvalue: _R = None
+    ) -> Stream[Union[_T, _R]]:
         """The method joins multiple streams with the zip_longest python method,
         returning a new stream of tuples. The stream ends when the last stream ends.
         Streams that end first are continued with fillvalue."""
@@ -419,7 +432,7 @@ class Stream(Generic[_T]):
     @classmethod
     def round_robin(
         cls, stream: Stream[_T], stream1: Stream[_T1], *, strict: bool = False
-    ) -> Stream[_T | _T1]:
+    ) -> Stream[Union[_T, _T1]]:
         ...
 
     @overload
@@ -431,7 +444,7 @@ class Stream(Generic[_T]):
         stream2: Stream[_T2],
         *,
         strict: bool = False,
-    ) -> Stream[_T | _T1 | _T2]:
+    ) -> Stream[Union[_T, _T1, _T2]]:
         ...
 
     @overload
@@ -444,7 +457,7 @@ class Stream(Generic[_T]):
         stream3: Stream[_T3],
         *,
         strict: bool = False,
-    ) -> Stream[_T | _T1 | _T2 | _T3]:
+    ) -> Stream[Union[_T, _T1, _T2, _T3]]:
         ...
 
     @overload
@@ -458,7 +471,7 @@ class Stream(Generic[_T]):
         stream4: Stream[_T4],
         *,
         strict: bool = False,
-    ) -> Stream[_T | _T1 | _T2 | _T3 | _T4]:
+    ) -> Stream[Union[_T, _T1, _T2, _T3, _T4]]:
         ...
 
     @overload
@@ -484,14 +497,14 @@ class Stream(Generic[_T]):
     @classmethod
     def round_robin_longest(
         cls, stream: Stream[_T], *, fillvalue: _R
-    ) -> Stream[_T | _R]:
+    ) -> Stream[Union[_T, _R]]:
         ...
 
     @overload
     @classmethod
     def round_robin_longest(
         cls, stream: Stream[_T], stream1: Stream[_T1], *, fillvalue: _R
-    ) -> Stream[_T | _T1 | _R]:
+    ) -> Stream[Union[_T, _T1, _R]]:
         ...
 
     @overload
@@ -503,7 +516,7 @@ class Stream(Generic[_T]):
         stream2: Stream[_T2],
         *,
         fillvalue: _R,
-    ) -> Stream[_T | _T1 | _T2 | _R]:
+    ) -> Stream[Union[_T, _T1, _T2, _R]]:
         ...
 
     @overload
@@ -516,7 +529,7 @@ class Stream(Generic[_T]):
         stream3: Stream[_T3],
         *,
         fillvalue: _R,
-    ) -> Stream[_T | _T1 | _T2 | _T3 | _R]:
+    ) -> Stream[Union[_T, _T1, _T2, _T3, _R]]:
         ...
 
     @overload
@@ -530,14 +543,14 @@ class Stream(Generic[_T]):
         stream4: Stream[_T4],
         *,
         fillvalue: _R,
-    ) -> Stream[_T | _T1 | _T2 | _T3 | _T4 | _R]:
+    ) -> Stream[Union[_T, _T1, _T2, _T3, _T4, _R]]:
         ...
 
     @overload
     @classmethod
     def round_robin_longest(
         cls, *streams: Stream[_T], fillvalue: _R
-    ) -> Stream[_T | _R]:
+    ) -> Stream[Union[_T, _R]]:
         ...
 
     @overload
@@ -549,14 +562,14 @@ class Stream(Generic[_T]):
     @classmethod
     def round_robin_longest(
         cls, stream: Stream[_T], stream1: Stream[_T1]
-    ) -> Stream[_T | _T1]:
+    ) -> Stream[Union[_T, _T1]]:
         ...
 
     @overload
     @classmethod
     def round_robin_longest(
         cls, stream: Stream[_T], stream1: Stream[_T1], stream2: Stream[_T2]
-    ) -> Stream[_T | _T1 | _T2]:
+    ) -> Stream[Union[_T, _T1, _T2]]:
         ...
 
     @overload
@@ -567,7 +580,7 @@ class Stream(Generic[_T]):
         stream1: Stream[_T1],
         stream2: Stream[_T2],
         stream3: Stream[_T3],
-    ) -> Stream[_T | _T1 | _T2 | _T3]:
+    ) -> Stream[Union[_T, _T1, _T2, _T3]]:
         ...
 
     @overload
@@ -579,7 +592,7 @@ class Stream(Generic[_T]):
         stream2: Stream[_T2],
         stream3: Stream[_T3],
         stream4: Stream[_T4],
-    ) -> Stream[_T | _T1 | _T2 | _T3 | _T4]:
+    ) -> Stream[Union[_T, _T1, _T2, _T3, _T4]]:
         ...
 
     @overload
@@ -612,14 +625,14 @@ class Stream(Generic[_T]):
 
     @overload
     @classmethod
-    def chain(cls, stream: Stream[_T], stream1: Stream[_T1]) -> Stream[_T | _T1]:
+    def chain(cls, stream: Stream[_T], stream1: Stream[_T1]) -> Stream[Union[_T, _T1]]:
         ...
 
     @overload
     @classmethod
     def chain(
         cls, stream: Stream[_T], stream1: Stream[_T1], stream2: Stream[_T2]
-    ) -> Stream[_T | _T1 | _T2]:
+    ) -> Stream[Union[_T, _T1, _T2]]:
         ...
 
     @overload
@@ -630,7 +643,7 @@ class Stream(Generic[_T]):
         stream1: Stream[_T1],
         stream2: Stream[_T2],
         stream3: Stream[_T3],
-    ) -> Stream[_T | _T1 | _T2 | _T3]:
+    ) -> Stream[Union[_T, _T1, _T2, _T3]]:
         ...
 
     @overload
@@ -642,7 +655,7 @@ class Stream(Generic[_T]):
         stream2: Stream[_T2],
         stream3: Stream[_T3],
         stream4: Stream[_T4],
-    ) -> Stream[_T | _T1 | _T2 | _T3 | _T4]:
+    ) -> Stream[Union[_T, _T1, _T2, _T3, _T4]]:
         ...
 
     @overload
@@ -868,7 +881,7 @@ class Stream(Generic[_T]):
         self.__iter = loop(self.__iter)
         return self
 
-    def replace(self, __old: _T, __new: _R) -> Stream[_T | _R]:
+    def replace(self, __old: _T, __new: _R) -> Stream[Union[_T, _R]]:
         """The method replaces every instance of __old with __new."""
 
         def loop(__iter: Generator[_T, None, None]) -> Generator[_T, None, None]:
@@ -892,7 +905,7 @@ class Stream(Generic[_T]):
         __when: Callable[[_T], bool] = lambda _: True,
         *,
         exceptions: Literal["keep", "discard", "raise", "stop"] = "keep",
-    ) -> Stream[_T | _R]:
+    ) -> Stream[Union[_T, _R]]:
         """The method replaces every element with the output of the __with function.
         If set, the __when function determines whether or not to change the element.
         Exceptions thrown by either __with or __when are caught as StreamException,
@@ -1000,8 +1013,8 @@ class Stream(Generic[_T]):
         exc: Exception,
         todo: Literal["stop", "continue", "with", "replace"],
         /,
-        __with: _R | Callable[[_T], _R] = None,
-    ) -> Stream[_T | _R]:
+        __with: Union[_R, Callable[[_T], _R]] = None,
+    ) -> Stream[Union[_T, _R]]:
         """The method allows to deal with Exceptions thrown by functions in the
         stream.
          - stop -> the stream is interrupted before the exception
