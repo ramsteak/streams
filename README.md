@@ -9,7 +9,7 @@ streams is a python library to use Java-like stream objects to manipulate an ite
 
 To install the latest release:
 ```sh
-$ py -m pip install https://github.com/ramsteak/streams/releases/download/v1.0.0/streams-1.0.0-py3-none-any.whl
+$ py -m pip install https://github.com/ramsteak/streams/releases/download/v1.0.1/streams-1.0.1-py3-none-any.whl
 ```
 To install the most up-to-date changes:
 ```sh
