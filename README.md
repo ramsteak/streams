@@ -7,12 +7,13 @@ streams is a python library to use Java-like stream objects to manipulate an ite
 
 ## Installation
 
+To install the latest release:
 ```sh
-$ git clone https://github.com/ramsteak/streams.git
+$ py -m pip install https://github.com/ramsteak/streams/releases/download/v1.0.0/streams-1.0.0-py3-none-any.whl
 ```
+To install the most up-to-date changes:
 ```sh
-$ curl https://github.com/ramsteak/streams/releases/download/v1.0.0/streams-1.0.0-py3-none-any.whl --output streams-1.0.0-py3-none-any.whl
-$ python -m pip install streams-1.0.0-py3-none-any.whl
+$ py -m pip install git+https://github.com/ramsteak/streams.git
 ```
 
 ## Usage
