@@ -1156,12 +1156,16 @@ class Stream(Generic[_T]):
             raise UnlimitedStreamException
         return mean(e for e in _loop(self.__iter) if __key(e))
 
-    def all(self, __func: Callable[[_T], bool] = lambda x: x) -> bool:
+    def all(self) -> bool:
         """The method consumes the stream with the all method, returning the result."""
+        if self.__length == Len.INF:
+            raise UnlimitedStreamException
         return all(_loop(self.__iter))
 
-    def any(self, __func: Callable[[_T], bool] = lambda x: x) -> bool:
+    def any(self) -> bool:
         """The method consumes the stream with the any method, returning the result."""
+        if self.__length == Len.INF:
+            raise UnlimitedStreamException
         return any(_loop(self.__iter))
 
     def min(self) -> _T:
@@ -1175,6 +1179,29 @@ class Stream(Generic[_T]):
         if self.__length == Len.INF:
             raise UnlimitedStreamException
         return max(_loop(self.__iter))
+
+    def report(self) -> dict[str, _T]:
+        """The method consumes the stream and returns a dict with multiple informations
+        about the stream, such as length, sum, min, max, mean"""
+        if self.__length == Len.INF:
+            raise UnlimitedStreamException
+        it = enumerate(self)
+        ret = {"count": 0}
+        try:
+            while True:
+                index, val = next(it)
+                try:
+                    if ret["min"] > val:
+                        ret["min"] = val
+                    if ret["max"] < val:
+                        ret["max"] = val
+                    ret["sum"] += val
+                except KeyError:
+                    ret["min"], ret["max"], ret["sum"] = val, val, val
+        except StopIteration:
+            ret["count"] = index + 1
+            ret["mean"] = ret["sum"] / ret["count"]
+        return ret
 
     def split(
         self,

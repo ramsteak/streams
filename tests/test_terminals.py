@@ -69,3 +69,14 @@ def test_max() -> None:
 def test_split() -> None:
     stream_split = Stream.range(0, 10).split(lambda x: x % 2)
     assert str(stream_split) == "{0: <0, 2, 4, 6, 8>, 1: <1, 3, 5, 7, 9>}"
+
+
+def test_report() -> None:
+    stream_report = Stream.fibonacci().limit(20).report()
+    assert stream_report == {
+        "len": 20,
+        "max": 4181,
+        "mean": 547.25,
+        "min": 0,
+        "sum": 10945,
+    }
