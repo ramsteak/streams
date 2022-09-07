@@ -74,7 +74,7 @@ def test_split() -> None:
 def test_report() -> None:
     stream_report = Stream.fibonacci().limit(20).report()
     assert stream_report == {
-        "len": 20,
+        "count": 20,
         "max": 4181,
         "mean": 547.25,
         "min": 0,

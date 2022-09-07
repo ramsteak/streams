@@ -69,11 +69,11 @@ def max_length(*streams: Stream[Any]) -> Len:
     return min(stream.length for stream in streams)
 
 
-def _loop_enter(__i: Generator[_T, None, None]) -> Generator[_T, None, None]:
-    for nx in __i:
-        if isinstance(nx, StreamException):
-            raise nx.exc
-        yield nx
+# def _loop_enter(__i: Generator[_T, None, None]) -> Generator[_T, None, None]:
+#     for nx in __i:
+#         if isinstance(nx, StreamException):
+#             raise nx.exc
+#         yield nx
 
 
 def _loop(__i: Generator[_T, None, None]) -> Generator[_T, None, None]:
@@ -83,7 +83,10 @@ def _loop(__i: Generator[_T, None, None]) -> Generator[_T, None, None]:
                 raise nx.exc
             yield nx
     except GeneratorExit:
-        __i.close()
+        try:
+            __i.close()
+        except AttributeError:
+            pass
         return
 
 
@@ -122,7 +125,7 @@ class Stream(Generic[_T]):
         >>> Stream.range(4)    -> <0,1,2,3>
         >>> Stream.primes().limit(3) -> <2,3,5>"""
 
-        self.__iter = _loop_enter(__iter)
+        self.__iter = _loop(__iter)
         if length is None:
             try:
                 len(__iter)
@@ -1332,7 +1335,7 @@ class Stream(Generic[_T]):
             _copy_method = list.copy
         list_cache.clear()
         list_cache.extend(self.__iter)
-        self.__iter = _loop_enter(_copy_method(list_cache))
+        self.__iter = _loop(_copy_method(list_cache))
         return self
 
     def reverse(self) -> Stream[_T]:
@@ -1341,7 +1344,7 @@ class Stream(Generic[_T]):
         if self.__length == Len.INF:
             raise UnlimitedStreamException
         list_cache = self.list()
-        self.__iter = _loop_enter(reversed(list_cache))
+        self.__iter = _loop(reversed(list_cache))
         return self
 
     def shuffle(self) -> Stream[_T]:
@@ -1350,7 +1353,7 @@ class Stream(Generic[_T]):
         if self.__length == Len.INF:
             raise UnlimitedStreamException
         list_cache = self.list()
-        self.__iter = _loop_enter(shuffle(list_cache))
+        self.__iter = _loop(shuffle(list_cache))
         return self
 
     # endregion
