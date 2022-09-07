@@ -1008,18 +1008,18 @@ class Stream(Generic[_T]):
     def exc(
         self,
         exc: Exception,
-        todo: Literal["stop", "continue", "with", "replace"],
+        todo: Literal["stop", "discard", "with", "replace"] = "discard",
         /,
         __with: Union[_R, Callable[[_T], _R]] = None,
     ) -> Stream[Union[_T, _R]]:
         """The method allows to deal with Exceptions thrown by functions in the
         stream.
          - stop -> the stream is interrupted before the exception
-         - continue -> the element that raises the exception gets skipped
+         - discard -> the element that raises the exception gets skipped
          - replace -> the element is replaced by the item specified as __with
          - with -> the element is replaced by the result of the __with function
          with the original element (before the eval)."""
-        if todo not in ("stop", "continue", "with", "replace"):
+        if todo not in ("stop", "discard", "with", "replace"):
             raise ValueError
 
         def loop(__iter: Generator[_T, None, None]) -> Generator[_T, None, None]:
@@ -1027,7 +1027,7 @@ class Stream(Generic[_T]):
                 for elm in __iter:
                     if isinstance(elm, StreamException) and isinstance(elm.exc, exc):
                         match todo:
-                            case "continue":
+                            case "discard":
                                 continue
                             case "replace":
                                 yield __with

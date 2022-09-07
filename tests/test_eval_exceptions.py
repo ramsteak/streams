@@ -35,9 +35,9 @@ def test_exc_stop() -> None:
     assert str(stream) == "<>"
 
 
-def test_exc_continue() -> None:
+def test_exc_discard() -> None:
     stream = (
-        Stream.range(0, 2, 1).eval(lambda x: 1 / x).exc(ZeroDivisionError, "continue")
+        Stream.range(0, 2, 1).eval(lambda x: 1 / x).exc(ZeroDivisionError, "discard")
     )
     assert str(stream) == "<1.0>"
 
@@ -130,7 +130,7 @@ def test_replacewith_keep_exception() -> None:
     stream = (
         Stream.range(3)
         .replace_with(lambda x: 1 / x, lambda _: True, exceptions="keep")
-        .exc(ZeroDivisionError, "continue")
+        .exc(ZeroDivisionError, "discard")
     )
     assert str(stream) == "<1.0, 0.5>"
 
