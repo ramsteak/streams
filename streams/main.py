@@ -1292,7 +1292,7 @@ class Stream(Generic[_T]):
     # endregion
     # region Caching methods
 
-    def cache(
+    def list_copy(
         self, list_cache: list[_T], _copy_method: Callable[[list], list] = None
     ) -> Stream[_T]:
         """The method consumes the stream and stores it into a list which reference

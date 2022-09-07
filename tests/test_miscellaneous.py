@@ -33,9 +33,9 @@ def test_length_override() -> None:
     pytest.raises(ValueError, stream._length_override, 1)
 
 
-def test_cache() -> None:
+def test_list_copy() -> None:
     list_cache = []
-    stream_cache = Stream.range(0, 10).cache(list_cache)
+    stream_cache = Stream.range(0, 10).list_copy(list_cache)
     assert list_cache == [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
     assert str(stream_cache) == "<0, 1, 2, 3, 4, 5, 6, 7, 8, 9>"
 
