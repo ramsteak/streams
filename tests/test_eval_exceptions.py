@@ -6,8 +6,9 @@ def test_eval() -> None:
     stream = Stream.range(5).eval(lambda x: x + 2)
     assert str(stream) == "<2, 3, 4, 5, 6>"
 
+
 def test_eval_u() -> None:
-    stream = Stream.range(5).enumerate().eval_u(lambda x,y:x+y)
+    stream = Stream.range(5).enumerate().eval_u(lambda x, y: x + y)
     assert str(stream) == "<0, 2, 4, 6, 8>"
 
 

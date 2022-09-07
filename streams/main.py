@@ -981,11 +981,11 @@ class Stream(Generic[_T]):
         exceptions: Literal["keep", "discard", "raise", "stop"] = "keep",
     ) -> Stream[_R]:
         """The method replaces every element of the stream with the output of the
-            __func function, unpacking the item to use as arguments to the function.
-            Exceptions thrown by __func are caught as StreamException, and can be dealt
-            with in a subsequent .exc method. Any exception that is not caught in this
-            way is raised in any subsequent method."""
-        return self.eval(lambda x:__func(*x), exceptions=exceptions)
+        __func function, unpacking the item to use as arguments to the function.
+        Exceptions thrown by __func are caught as StreamException, and can be dealt
+        with in a subsequent .exc method. Any exception that is not caught in this
+        way is raised in any subsequent method."""
+        return self.eval(lambda x: __func(*x), exceptions=exceptions)
 
     def _eval(
         self,
