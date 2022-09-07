@@ -864,7 +864,7 @@ class Stream(Generic[_T]):
     # endregion
     # region Operations to change the data items
 
-    def enumerate(self) -> Stream[_T]:
+    def enumerate(self) -> Stream[tuple[int, _T]]:
         """The mehtod functions in the same way that the enumerate object functions
         in normal python, by yielding tuples in the form of (index, value)."""
 
@@ -985,7 +985,7 @@ class Stream(Generic[_T]):
             Exceptions thrown by __func are caught as StreamException, and can be dealt
             with in a subsequent .exc method. Any exception that is not caught in this
             way is raised in any subsequent method."""
-        return self.eval(lambda x:__func(*x), exceptions)
+        return self.eval(lambda x:__func(*x), exceptions=exceptions)
 
     def _eval(
         self,
