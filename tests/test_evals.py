@@ -99,3 +99,8 @@ def test_eq():
 def test_neq():
     s = Stream.range(5).filter(neq(2))
     assert str(s) == "<0, 1, 3, 4>"
+
+
+def test_contains():
+    s = Stream(["hellp", "hi", "gianfranco", "aloha"]).filter(contains("h"))
+    assert str(s) == "<hellp, hi, aloha>"

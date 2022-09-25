@@ -1,4 +1,4 @@
-from typing import Callable, SupportsFloat, overload, TypeVar
+from typing import Any, Callable, SupportsFloat, overload, TypeVar
 import math
 
 __all__ = [
@@ -23,6 +23,7 @@ __all__ = [
     "ge",
     "eq",
     "neq",
+    "contains",
 ]
 
 _T = TypeVar("_T")
@@ -258,3 +259,10 @@ def neq(__v: _T):
         return not (__x.__eq__(__v))
 
     return neq_
+
+
+def contains(__v: _T):
+    def cont_(__x: dict[_T, Any]) -> bool:
+        return __v in __x
+
+    return cont_
