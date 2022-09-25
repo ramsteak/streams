@@ -69,3 +69,33 @@ def test_div():
 def test_same():
     s = Stream.range(5).eval(same)
     assert str(s) == "<0, 1, 2, 3, 4>"
+
+
+def test_lt():
+    s = Stream.range(5).filter(lt(2))
+    assert str(s) == "<0, 1>"
+
+
+def test_le():
+    s = Stream.range(5).filter(le(2))
+    assert str(s) == "<0, 1, 2>"
+
+
+def test_gt():
+    s = Stream.range(5).filter(gt(2))
+    assert str(s) == "<3, 4>"
+
+
+def test_ge():
+    s = Stream.range(5).filter(ge(2))
+    assert str(s) == "<2, 3, 4>"
+
+
+def test_eq():
+    s = Stream.range(5).filter(eq(2))
+    assert str(s) == "<2>"
+
+
+def test_neq():
+    s = Stream.range(5).filter(neq(2))
+    assert str(s) == "<0, 1, 3, 4>"

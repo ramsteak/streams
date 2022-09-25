@@ -69,13 +69,6 @@ def max_length(*streams: Stream[Any]) -> Len:
     return min(stream.length for stream in streams)
 
 
-# def _loop_enter(__i: Generator[_T, None, None]) -> Generator[_T, None, None]:
-#     for nx in __i:
-#         if isinstance(nx, StreamException):
-#             raise nx.exc
-#         yield nx
-
-
 def _loop(__i: Generator[_T, None, None]) -> Generator[_T, None, None]:
     try:
         for nx in __i:

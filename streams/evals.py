@@ -17,9 +17,16 @@ __all__ = [
     "div",
     "rdiv",
     "same",
+    "lt",
+    "le",
+    "gt",
+    "ge",
+    "eq",
+    "neq",
 ]
 
 _T = TypeVar("_T")
+_F = TypeVar("_F", float, SupportsFloat)
 
 
 @overload
@@ -55,7 +62,7 @@ def cube(__x: int) -> int:
 
 
 @overload
-def cube(__x: SupportsFloat) -> float:
+def cube(__x: _F) -> _F:
     ...
 
 
@@ -67,12 +74,12 @@ def cube(__x):
 
 
 @overload
-def pow(*, base: SupportsFloat) -> Callable[[SupportsFloat], float]:
+def pow(*, base: _F) -> Callable[[SupportsFloat], _F]:
     ...
 
 
 @overload
-def pow(*, exp: SupportsFloat) -> Callable[[SupportsFloat], float]:
+def pow(*, exp: SupportsFloat) -> Callable[[_F], _F]:
     ...
 
 
@@ -94,12 +101,12 @@ def pow(**kw):
 
 
 @overload
-def log(*, base: SupportsFloat) -> Callable[[SupportsFloat], float]:
+def log(*, base: SupportsFloat) -> Callable[[_F], _F]:
     ...
 
 
 @overload
-def log(*, arg: SupportsFloat) -> Callable[[SupportsFloat], float]:
+def log(*, arg: _F) -> Callable[[SupportsFloat], _F]:
     ...
 
 
@@ -121,12 +128,12 @@ def log(**kw):
 
 
 @overload
-def root(*, deg: SupportsFloat) -> Callable[[SupportsFloat], float]:
+def root(*, deg: SupportsFloat) -> Callable[[_F], _F]:
     ...
 
 
 @overload
-def root(*, arg: SupportsFloat) -> Callable[[SupportsFloat], float]:
+def root(*, arg: _F) -> Callable[[SupportsFloat], _F]:
     ...
 
 
@@ -147,7 +154,7 @@ def root(**kw):
         return root_a
 
 
-def inv(__x: SupportsFloat) -> float:
+def inv(__x: _F) -> _F:
     return 1.0 / __x
 
 
@@ -209,3 +216,45 @@ def rdiv(__v):
 
 def same(__v: _T) -> _T:
     return __v
+
+
+def lt(__v: _T):
+    def lt_(__x: _T) -> bool:
+        return __x.__lt__(__v)
+
+    return lt_
+
+
+def le(__v: _T):
+    def le_(__x: _T) -> bool:
+        return __x.__le__(__v)
+
+    return le_
+
+
+def gt(__v: _T):
+    def gt_(__x: _T) -> bool:
+        return __x.__gt__(__v)
+
+    return gt_
+
+
+def ge(__v: _T):
+    def ge_(__x: _T) -> bool:
+        return __x.__ge__(__v)
+
+    return ge_
+
+
+def eq(__v: _T):
+    def eq_(__x: _T) -> bool:
+        return __x.__eq__(__v)
+
+    return eq_
+
+
+def neq(__v: _T):
+    def neq_(__x: _T) -> bool:
+        return not (__x.__eq__(__v))
+
+    return neq_
