@@ -1,4 +1,4 @@
-from typing import Any, Callable, SupportsFloat, overload, TypeVar
+from typing import Any, Callable, Container, SupportsFloat, overload, TypeVar
 import math
 
 __all__ = [
@@ -266,3 +266,10 @@ def contains(__v: _T):
         return __v in __x
 
     return cont_
+
+
+def into(__v: Container[_T]):
+    def into_(__x: _T) -> bool:
+        return __x in __v
+
+    return into_
