@@ -66,9 +66,9 @@ def test_max() -> None:
     assert stream_max == 9
 
 
-def test_split() -> None:
-    stream_split = Stream.range(0, 10).split(lambda x: x % 2)
-    assert str(stream_split) == "{0: <0, 2, 4, 6, 8>, 1: <1, 3, 5, 7, 9>}"
+# def test_split() -> None:
+#     stream_split = Stream.range(0, 10).split(lambda x: x % 2)
+#     assert str(stream_split) == "{0: <0, 2, 4, 6, 8>, 1: <1, 3, 5, 7, 9>}"
 
 
 def test_report() -> None:

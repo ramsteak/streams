@@ -154,21 +154,21 @@ def test_filter_discard_exception() -> None:
 #     assert str(stream) == "<1.0, 0.5>"
 
 
-def test_split_stop_exception() -> None:
-    stream = Stream.range(3).split(lambda x: 1 / x > 0.7, exceptions="stop")
-    assert str(stream) == "{}"
+# def test_split_stop_exception() -> None:
+#     stream = Stream.range(3).split(lambda x: 1 / x > 0.7, exceptions="stop")
+#     assert str(stream) == "{}"
 
 
 # def test_split_keep_exception() -> None:
 #     def do(): return Stream.range(3).split(lambda x:1/x > 0.7, exceptions='keep')
 #     pytest.raises(ZeroDivisionError, do)
-def test_split_raise_exception() -> None:
-    def do():
-        return Stream.range(3).split(lambda x: 1 / x > 0.7, exceptions="raise")
+# def test_split_raise_exception() -> None:
+#     def do():
+#         return Stream.range(3).split(lambda x: 1 / x > 0.7, exceptions="raise")
 
-    pytest.raises(ZeroDivisionError, do)
+#     pytest.raises(ZeroDivisionError, do)
 
 
-def test_split_discard_exception() -> None:
-    stream = Stream.range(3).split(lambda x: 1 / x > 0.7, exceptions="discard")
-    assert str(stream) == "{True: <1>, False: <2>}"
+# def test_split_discard_exception() -> None:
+#     stream = Stream.range(3).split(lambda x: 1 / x > 0.7, exceptions="discard")
+#     assert str(stream) == "{True: <1>, False: <2>}"
