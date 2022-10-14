@@ -26,9 +26,9 @@ def test_case_4_Ramanujan_summation() -> None:
     raises(AssertionError, summa)
 
 
-def test_case_5_alphabet() -> None:
-    stream = Stream.range(65, 91).eval(chr).join()
-    assert stream == "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+# def test_case_5_alphabet() -> None:
+#     stream = Stream.range(65, 91).eval(chr).join()
+#     assert stream == "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
 
 def test_case_6_basel_problem() -> None:

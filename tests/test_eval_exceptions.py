@@ -12,9 +12,9 @@ def test_eval_u() -> None:
     assert str(stream) == "<0, 2, 4, 6, 8>"
 
 
-def test_replace_with() -> None:
-    stream = Stream.range(5).replace_with(str, lambda x: x % 2)
-    assert repr(stream) == "<0, '1', 2, '3', 4>"
+# def test_replace_with() -> None:
+#     stream = Stream.range(5).replace_with(str, lambda x: x % 2)
+#     assert repr(stream) == "<0, '1', 2, '3', 4>"
 
 
 def test_exc_replace() -> None:
@@ -52,9 +52,9 @@ def test_eval_exception_uncaught() -> None:
     pytest.raises(ZeroDivisionError, stream.list)
 
 
-def test_replace_exception_uncaught() -> None:
-    stream = Stream.range(3).replace_with(lambda x: 1 / x, lambda _: True)
-    pytest.raises(ZeroDivisionError, stream.list)
+# def test_replace_exception_uncaught() -> None:
+#     stream = Stream.range(3).replace_with(lambda x: 1 / x, lambda _: True)
+#     pytest.raises(ZeroDivisionError, stream.list)
 
 
 def test_eval_exception_in_exc() -> None:
@@ -62,13 +62,13 @@ def test_eval_exception_in_exc() -> None:
     assert str(stream) == "<1, 1.0, 0.5>"
 
 
-def test_replace_exception_in_exc() -> None:
-    stream = (
-        Stream.range(3)
-        .replace_with(lambda x: 1 / x)
-        .exc(ZeroDivisionError, "replace", 1)
-    )
-    assert str(stream) == "<1, 1.0, 0.5>"
+# def test_replace_exception_in_exc() -> None:
+#     stream = (
+#         Stream.range(3)
+#         .replace_with(lambda x: 1 / x)
+#         .exc(ZeroDivisionError, "replace", 1)
+#     )
+#     assert str(stream) == "<1, 1.0, 0.5>"
 
 
 def test_eval_exception_in_exc_uncaught() -> None:
@@ -120,38 +120,38 @@ def test_filter_discard_exception() -> None:
     assert str(stream) == "<1>"
 
 
-def test_replacewith_stop_exception() -> None:
-    stream = Stream.range(3).replace_with(
-        lambda x: 1 / x, lambda _: True, exceptions="stop"
-    )
-    assert str(stream) == "<>"
+# def test_replacewith_stop_exception() -> None:
+#     stream = Stream.range(3).replace_with(
+#         lambda x: 1 / x, lambda _: True, exceptions="stop"
+#     )
+#     assert str(stream) == "<>"
 
 
-def test_replacewith_keep_exception() -> None:
-    stream = Stream.range(3).replace_with(
-        lambda x: 1 / x, lambda _: True, exceptions="keep"
-    )
-    pytest.raises(ZeroDivisionError, stream.list)
-    stream = (
-        Stream.range(3)
-        .replace_with(lambda x: 1 / x, lambda _: True, exceptions="keep")
-        .exc(ZeroDivisionError, "discard")
-    )
-    assert str(stream) == "<1.0, 0.5>"
+# def test_replacewith_keep_exception() -> None:
+#     stream = Stream.range(3).replace_with(
+#         lambda x: 1 / x, lambda _: True, exceptions="keep"
+#     )
+#     pytest.raises(ZeroDivisionError, stream.list)
+#     stream = (
+#         Stream.range(3)
+#         .replace_with(lambda x: 1 / x, lambda _: True, exceptions="keep")
+#         .exc(ZeroDivisionError, "discard")
+#     )
+#     assert str(stream) == "<1.0, 0.5>"
 
 
-def test_replacewith_raise_exception() -> None:
-    stream = Stream.range(3).replace_with(
-        lambda x: 1 / x, lambda _: True, exceptions="raise"
-    )
-    pytest.raises(ZeroDivisionError, stream.list)
+# def test_replacewith_raise_exception() -> None:
+#     stream = Stream.range(3).replace_with(
+#         lambda x: 1 / x, lambda _: True, exceptions="raise"
+#     )
+#     pytest.raises(ZeroDivisionError, stream.list)
 
 
-def test_replacewith_discard_exception() -> None:
-    stream = Stream.range(3).replace_with(
-        lambda x: 1 / x, lambda _: True, exceptions="discard"
-    )
-    assert str(stream) == "<1.0, 0.5>"
+# def test_replacewith_discard_exception() -> None:
+#     stream = Stream.range(3).replace_with(
+#         lambda x: 1 / x, lambda _: True, exceptions="discard"
+#     )
+#     assert str(stream) == "<1.0, 0.5>"
 
 
 def test_split_stop_exception() -> None:

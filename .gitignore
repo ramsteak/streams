@@ -1,5 +1,6 @@
 # Workspace specific files
 _temp*.py
+_*.*
 .vscode/
 r.sh
 

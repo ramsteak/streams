@@ -33,6 +33,7 @@ _T4 = TypeVar("_T4")
 _R = TypeVar("_R")
 _H = TypeVar("_H", Hashable, Any)
 
+_NotSet = object()
 
 DEFAULT_FORMAT = "<{}(, )>"
 DEFAULT_REPR_FORMAT = "<{!r}(, )>"
@@ -69,31 +70,6 @@ def max_length(*streams: Stream[Any]) -> Len:
     return min(stream.length for stream in streams)
 
 
-def _loop(__i: Generator[_T, None, None]) -> Generator[_T, None, None]:
-    try:
-        for nx in __i:
-            if isinstance(nx, StreamException):
-                raise nx.exc
-            yield nx
-    except GeneratorExit:
-        try:
-            __i.close()
-        except AttributeError:
-            pass
-        return
-
-
-def _loop_enum(__i: Generator[_T, None, None]) -> Generator[tuple[int, _T], None, None]:
-    try:
-        for i, nx in enumerate(__i):
-            if isinstance(nx, StreamException):
-                raise nx.exc
-            yield i, nx
-    except GeneratorExit:
-        __i.close()
-        return
-
-
 class Stream(Generic[_T]):
     """Class to utilize Java-like object streams in python.
     Example usage:
@@ -106,7 +82,7 @@ class Stream(Generic[_T]):
     required. It is therefore possible to use infinite data streams.
     Some methods require the stream to be finite (such as Stream.last())."""
 
-    def __init__(self, __iter: Iterable[_T], length: Len = None) -> None:
+    def __init__(self, __iter: Generator[_T, None, None], length: Len = None) -> None:
         """The method generates a stream object from any iterable, consuming it
         lazily when needed. The length parameter is to be set when the length
         cannot be determined automatically (such as iterables without a __len__
@@ -114,11 +90,14 @@ class Stream(Generic[_T]):
         possible it is preferrable to use the default generators, such as range
         and count.
 
-        >>> Stream([1,2,3,4,5]) -> <1,2,3,4,5>
-        >>> Stream.range(4)    -> <0,1,2,3>
-        >>> Stream.primes().limit(3) -> <2,3,5>"""
+        >>> Stream([1, 2, 3, 4, 5]) -> <1, 2, 3, 4, 5>
+        >>> Stream.range(4)    -> <0, 1, 2, 3>
+        >>> Stream.primes().limit(3) -> <2, 3, 5>"""
 
-        self.__iter = _loop(__iter)
+        self.__cache = list[_T]()
+        self.__iter = iter(__iter)
+        # -         self.__iter = _loop(__iter)
+
         if length is None:
             try:
                 len(__iter)
@@ -656,7 +635,8 @@ class Stream(Generic[_T]):
 
     @classmethod
     def chain(cls, *streams: Stream[_T]) -> Stream[_T]:
-        """The method conc"""
+        """The method concatenates multiple streams into one single stream. Only the
+        last stream may be infinite."""
         if any(stream.length == Len.INF for stream in streams[:-1]):
             raise UnlimitedStreamException
 
@@ -704,9 +684,9 @@ class Stream(Generic[_T]):
         __key function. All values which do not return the same value as keep_if
         are discarded."""
 
-        def loop(__iter: Generator[_T, None, None]) -> Generator[_T, None, None]:
+        def loop(__iter: Stream[_T]) -> Generator[_T, None, None]:
             try:
-                for elm in _loop(__iter):
+                for elm in __iter:
                     try:
                         if __key(elm) == keep_if:
                             yield elm
@@ -724,73 +704,38 @@ class Stream(Generic[_T]):
             except GeneratorExit:
                 __iter.close()
                 return
+            except StopIteration:
+                return
 
-        self.__iter = loop(self.__iter)
-        return self
+        return Stream(loop(self))
 
-    def slice(self, start: int = 0, stop: int = None, step: int = 1) -> Stream[_T]:
+    def slice(self, start: int, stop: int, step: int = 1) -> Stream[_T]:
         """The method allows to select a slice of the stream via the start, stop,
         step parameters."""
-        if stop is not None:
-            self.__length = Len.FIN
+        ret = (
+            self.enumerate().filter(lambda i: i[0] in range(start, stop, step)).denum()
+        )
+        ret.__length = Len.FIN
         if step < 1:
             raise ValueError("Step value must be 1 or greater")
         if start > stop:
             raise ValueError("Start value must be smaller than stop value")
 
-        def loop(__iter: Generator[_T, None, None]) -> Generator[_T, None, None]:
-            try:
-                for i, elm in _loop_enum(__iter):
-                    if stop is not None and i >= stop:
-                        __iter.close()
-                        return
-                    if i < start:
-                        # TODO: generator.send to skip elements -> .print() -> '<..., 3, 4, ...>
-                        continue
-                    if (i - start) % step == 0:
-                        yield elm
-            except GeneratorExit:
-                __iter.close()
-                return
-
-        self.__iter = loop(self.__iter)
-        return self
+        return ret
 
     def skip(self, count: int) -> Stream[_T]:
         """The method allows to skip a number of items, resuming the stream after
         the specified amount."""
 
-        def loop(__iter: Generator[_T, None, None]) -> Generator[_T, None, None]:
-            try:
-                for i, elm in _loop_enum(__iter):
-                    if i < count:
-                        # TODO: generator.send to skip elements -> .print() -> '<..., 3, 4, ...>
-                        continue
-                    yield elm
-            except GeneratorExit:
-                __iter.close()
-                return
-
-        self.__iter = loop(self.__iter)
-        return self
+        return self.enumerate().filter(lambda i: i[0] >= count).denum()
 
     def limit(self, count: int) -> Stream[_T]:
         """The method cuts the stream after the specified amount of item is yielded."""
-        self.__length = Len.FIN
+        # self.__length = Len.FIN
 
-        def loop(__iter: Generator[_T, None, None]) -> Generator[_T, None, None]:
-            try:
-                for i, elm in _loop_enum(__iter):
-                    yield elm
-                    if i >= count - 1:  # -1 necessary to not consume another element
-                        __iter.close()
-                        return
-            except GeneratorExit:
-                __iter.close()
-                return
-
-        self.__iter = loop(self.__iter)
-        return self
+        ret = self.enumerate().stop(lambda x: x[0] >= count - 1, inclusive=True).denum()
+        ret.__length = Len.FIN
+        return ret
 
     def stop(
         self,
@@ -803,12 +748,10 @@ class Stream(Generic[_T]):
         """The method stops the stream when the __when function evaluates to true.
         If set to true, the inclusive parameter prints the element that evaluated
         to true before interrupting the stream."""
-        if self.__length == Len.INF:
-            self.__length = Len.UNK
 
-        def loop(__iter: Generator[_T, None, None]) -> Generator[_T, None, None]:
+        def loop(__iter: Stream[_T]) -> Generator[_T, None, None]:
             try:
-                for elm in _loop(__iter):
+                for elm in __iter:
                     try:
                         if __when(elm):
                             if inclusive:
@@ -832,30 +775,28 @@ class Stream(Generic[_T]):
             except GeneratorExit:
                 __iter.close()
                 return
-
-        self.__iter = loop(self.__iter)
-        return self
-
-    def distinct(self) -> Stream[_T]:
-        """The method removes all elements that repeat in the stream. It is to be
-        noted that it uses a set to cache the elements, therefore the elements must
-        be hashable."""
-        if self.__length == Len.INF:
-            raise UnlimitedStreamException
-
-        def loop(__iter: Generator[_T, None, None]) -> Generator[_T, None, None]:
-            try:
-                items = set()
-                for elm in _loop(__iter):
-                    if elm not in items:
-                        items.add(elm)
-                        yield elm
-            except GeneratorExit:
-                __iter.close()
+            except StopIteration:
                 return
 
-        self.__iter = loop(self.__iter)
-        return self
+        ret = Stream(loop(self))
+        if ret.length == Len.INF:
+            ret.__length = Len.UNK
+
+        return ret
+
+    def distinct(self) -> Stream[_T]:
+        class remember:
+            def __init__(self) -> None:
+                self.__mem = set()
+
+            def __call__(self, __item: _T) -> bool:
+                if __item not in self.__mem:
+                    self.__mem.add(__item)
+                    return True
+                return False
+
+        mem = remember()
+        return self.filter(mem)
 
     # endregion
     # region Operations to change the data items
@@ -864,72 +805,27 @@ class Stream(Generic[_T]):
         """The mehtod functions in the same way that the enumerate object functions
         in normal python, by yielding tuples in the form of (index, value)."""
 
-        def loop(__iter: Generator[_T, None, None]) -> Generator[_T, None, None]:
+        def loop(__iter: Stream[_T]) -> Generator[_T, None, None]:
             try:
-                yield from _loop_enum(__iter)
+                for i, elm in enumerate(__iter):
+                    yield (i, elm)
             except GeneratorExit:
                 __iter.close()
                 return
+            except StopIteration:
+                return
 
-        self.__iter = loop(self.__iter)
-        return self
+        return Stream(loop(self))
+
+    def denum(self) -> Stream[_T]:
+        """The method is a shorthand way to remove the enumeration.
+        It is a quick replacement for .eval(lambda x:x[1])."""
+        return self.eval(lambda x: x[1])
 
     def replace(self, __old: _T, __new: _R) -> Stream[Union[_T, _R]]:
         """The method replaces every instance of __old with __new."""
 
-        def loop(__iter: Generator[_T, None, None]) -> Generator[_T, None, None]:
-            try:
-                for elm in _loop(__iter):
-                    if elm == __old:
-                        yield __new
-                    else:
-                        yield elm
-            except GeneratorExit:
-                __iter.close()
-                return
-
-        self.__iter = loop(self.__iter)
-        return self
-
-    def replace_with(
-        self,
-        __with: Callable[[_T], _R],
-        /,
-        __when: Callable[[_T], bool] = lambda _: True,
-        *,
-        exceptions: Literal["keep", "discard", "raise", "stop"] = "keep",
-    ) -> Stream[Union[_T, _R]]:
-        """The method replaces every element with the output of the __with function.
-        If set, the __when function determines whether or not to change the element.
-        Exceptions thrown by either __with or __when are caught as StreamException,
-        and can be dealt with in a subsequent .exc method. Any exception that is not
-        caught in this way is raised in any subsequent method."""
-
-        def loop(__iter: Generator[_T, None, None]) -> Generator[_T, None, None]:
-            try:
-                for elm in _loop(__iter):
-                    try:
-                        if __when(elm):
-                            yield __with(elm)
-                        else:
-                            yield elm
-                    except Exception as E:
-                        match exceptions:
-                            case "keep":
-                                yield StreamException(E, elm)
-                            case "discard":
-                                continue
-                            case "raise":
-                                raise E
-                            case "stop":
-                                __iter.close()
-                                return
-            except GeneratorExit:
-                __iter.close()
-                return
-
-        self.__iter = loop(self.__iter)
-        return self
+        return self.eval(lambda x: __new if x == __old else x)
 
     def eval(
         self,
@@ -946,9 +842,9 @@ class Stream(Generic[_T]):
         In order to catch BaseExceptions you can call the _eval method, but it is
         not recommended to use it except in specific circumstances."""
 
-        def loop(__iter: Generator[_T, None, None]) -> Generator[_T, None, None]:
+        def loop(__iter: Stream[_T]) -> Generator[_T, None, None]:
             try:
-                for elm in _loop(__iter):
+                for elm in __iter:
                     try:
                         yield __func(elm)
                     except Exception as E:
@@ -965,9 +861,10 @@ class Stream(Generic[_T]):
             except GeneratorExit:
                 __iter.close()
                 return
+            except StopIteration:
+                return
 
-        self.__iter = loop(self.__iter)
-        return self
+        return Stream(loop(self))
 
     def eval_u(
         self,
@@ -982,38 +879,6 @@ class Stream(Generic[_T]):
         with in a subsequent .exc method. Any exception that is not caught in this
         way is raised in any subsequent method."""
         return self.eval(lambda x: __func(*x), exceptions=exceptions)
-
-    def _eval(
-        self,
-        __func: Callable[[_T], _R],
-        /,
-        *,
-        exceptions: Literal["keep", "discard", "raise", "stop"] = "keep",
-    ) -> Stream[_R]:
-        """Eval method to catch BaseException. Not recommended."""
-
-        def loop(__iter: Generator[_T, None, None]) -> Generator[_T, None, None]:
-            try:
-                for elm in _loop(__iter):
-                    try:
-                        yield __func(elm)
-                    except BaseException as E:
-                        match exceptions:
-                            case "keep":
-                                yield StreamException(E, elm)
-                            case "discard":
-                                continue
-                            case "raise":
-                                raise E
-                            case "stop":
-                                __iter.close()
-                                return
-            except GeneratorExit:
-                __iter.close()
-                return
-
-        self.__iter = loop(self.__iter)
-        return self
 
     def exc(
         self,
@@ -1031,11 +896,12 @@ class Stream(Generic[_T]):
          with the original element (before the eval)."""
         if todo not in ("stop", "discard", "with", "replace"):
             raise ValueError
-
-        def loop(__iter: Generator[_T, None, None]) -> Generator[_T, None, None]:
+        
+        def loop(__iter: Stream[_T]) -> Generator[_T, None, None]:
             try:
-                for elm in __iter:
-                    if isinstance(elm, StreamException) and isinstance(elm.exc, exc):
+                while True:
+                    elm = __iter.__next_sxc__()
+                    if isinstance(elm, StreamException):
                         match todo:
                             case "discard":
                                 continue
@@ -1054,128 +920,117 @@ class Stream(Generic[_T]):
             except GeneratorExit:
                 __iter.close()
                 return
-
-        self.__iter = loop(self.__iter)
-        return self
+            except StopIteration:
+                return
+        
+        return Stream(loop(self))
 
     def list(self) -> list[_T]:
         """The method consumes the stream and returns a list with the items of the
         stream."""
         if self.__length == Len.INF:
             raise UnlimitedStreamException
-        return list(_loop(self.__iter))
+        return list(self)
 
     def tuple(self) -> tuple[_T]:
         """The method consumes the stream and returns a tuple with the items of the
         stream."""
         if self.__length == Len.INF:
             raise UnlimitedStreamException
-        return tuple(_loop(self.__iter))
+        return tuple(self)
 
     def set(self) -> set[_T]:
         """The method consumes the stream and returns a set with the items of the
         stream."""
         if self.__length == Len.INF:
             raise UnlimitedStreamException
-        return set(_loop(self.__iter))
+        return set(self)
 
     def null(self) -> None:
         """The method consumes the stream, returning nothing.
         Useful to debug (Stream.print does not print until consumed)."""
         if self.__length == Len.INF:
             raise UnlimitedStreamException
-
-        def loop(__iter: Generator[_T, None, None]) -> Generator[_T, None, None]:
-            try:
-                for _ in _loop(__iter):
-                    ...
-            except GeneratorExit:
-                __iter.close()
-                return
-
-        self.__iter = loop(self.__iter)
+        for _ in self:
+            ...
         return self
 
-    def first(
-        self, __key: Callable[[_T], bool] = lambda _: True, default: _T = None
-    ) -> _T:
+    def first(self, default: _T = _NotSet, consume: bool = True) -> _T:
         """The method consumes the first item of the stream, returning it. If the
         stream is empty the default item is returned."""
-
-        for elm in _loop(self.__iter):
-            if __key(
-                elm
-            ):  # No try except necessary, if exception is raised it must be raised
-                return elm
-        return default
-
-    def last(
-        self, __key: Callable[[_T], bool] = lambda _: True, default: _T = None
-    ) -> _T:
-        """The method consumes the entire stream, returning only the last item.
-        If the stream is empty the default item is returned."""
-        if self.__length == Len.INF:
-            raise UnlimitedStreamException
-
-        ret = default
         try:
-            for elm in _loop(self.__iter):
-                if __key(
-                    elm
-                ):  # No try except necessary, if exception is raised it must be raised
-                    ret = elm
-        except GeneratorExit:
-            self.__iter.close()
-            return ret
-        return ret
+            f = next(self)
+        except StopIteration:
+            if default is _NotSet:
+                raise StopIteration
+            return default
+        if not consume:
+            self.__cache.insert(0, f)
+        return f
 
-    def join(self, sep: str = "", __key: Callable[[_T], bool] = lambda _: True) -> str:
-        """The method consumes the stream with the join method, returning the result."""
-        return sep.join(e for e in _loop(self.__iter) if __key(e))
+    def last(self, default: _T = _NotSet, consume: bool = True) -> _T:
+        self.cache()
+        if self.__cache:
+            if not consume:
+                return self.__cache[-1]
+            else:
+                return self.__cache.pop()
+        else:
+            if default is _NotSet:
+                raise StopIteration
+            else:
+                return default
 
-    def sum(self, __key: Callable[[_T], bool] = lambda _: True) -> _T:
-        """The method consumes the stream with the sum method, returning the result."""
+    def _loopovr(
+        self,
+        __key: Callable[[_T], bool],
+        consume: bool,
+        method: Callable[[Iterable[_T]], _T],
+    ) -> _T:
         if self.__length == Len.INF:
             raise UnlimitedStreamException
-        return sum(e for e in _loop(self.__iter) if __key(e))
+        if not consume:
+            self.cache()
+            return method(e for e in self.__cache if __key(e))
+        else:
+            return method(e for e in self if __key(e))
 
-    def count(self, __key: Callable[[_T], bool] = lambda _: True) -> _T:
-        """The method consumes the stream with the len method, returning the result."""
-        if self.__length == Len.INF:
-            raise UnlimitedStreamException
-        return sum(1 for e in _loop(self.__iter) if __key(e))
+    def sum(
+        self, __key: Callable[[_T], bool] = lambda _: True, consume: bool = True
+    ) -> _T:
+        return self._loopovr(__key, consume, sum)
 
-    def mean(self, __key: Callable[[_T], bool] = lambda _: True) -> _T:
-        """The method consumes the stream with the statistics.mean method,
-        returning the result."""
-        if self.__length == Len.INF:
-            raise UnlimitedStreamException
-        return mean(e for e in _loop(self.__iter) if __key(e))
+    def count(
+        self, __key: Callable[[_T], bool] = lambda _: True, consume: bool = True
+    ) -> _T:
+        def cnt(__it:Iterable[Any]) -> int: return sum(1 for _ in __it)
+        return self._loopovr(__key, consume, cnt)
 
-    def all(self) -> bool:
-        """The method consumes the stream with the all method, returning the result."""
-        if self.__length == Len.INF:
-            raise UnlimitedStreamException
-        return all(_loop(self.__iter))
+    def mean(
+        self, __key: Callable[[_T], bool] = lambda _: True, consume: bool = True
+    ) -> _T:
+        return self._loopovr(__key, consume, mean)
 
-    def any(self) -> bool:
-        """The method consumes the stream with the any method, returning the result."""
-        if self.__length == Len.INF:
-            raise UnlimitedStreamException
-        return any(_loop(self.__iter))
+    def all(
+        self, __key: Callable[[_T], bool] = lambda _: True, consume: bool = True
+    ) -> _T:
+        return self._loopovr(__key, consume, all)
 
-    def min(self) -> _T:
-        """The method consumes the stream with the min method, returning the result."""
-        if self.__length == Len.INF:
-            raise UnlimitedStreamException
-        return min(_loop(self.__iter))
+    def any(
+        self, __key: Callable[[_T], bool] = lambda _: True, consume: bool = True
+    ) -> _T:
+        return self._loopovr(__key, consume, any)
 
-    def max(self) -> _T:
-        """The method consumes the stream with the max method, returning the result."""
-        if self.__length == Len.INF:
-            raise UnlimitedStreamException
-        return max(_loop(self.__iter))
+    def min(
+        self, __key: Callable[[_T], bool] = lambda _: True, consume: bool = True
+    ) -> _T:
+        return self._loopovr(__key, consume, min)
 
+    def max(
+        self, __key: Callable[[_T], bool] = lambda _: True, consume: bool = True
+    ) -> _T:
+        return self._loopovr(__key, consume, max)
+    
     def report(self) -> dict[str, _T]:
         """The method consumes the stream and returns a dict with multiple informations
         about the stream, such as length, sum, min, max, mean"""
@@ -1199,56 +1054,82 @@ class Stream(Generic[_T]):
             ret["mean"] = ret["sum"] / ret["count"]
         return ret
 
-    def split(
-        self,
-        __key: Callable[[_T], _H],
-        /,
-        *,
-        exceptions: Literal["keep", "discard", "raise", "stop"] = "keep",
-    ) -> dict[_H, Stream[_T]]:
-        """The method returns a dict of streams. The streams are obtained by grouping,
-        in order, all elements returning the same value when the __key function is
-        applied to them. If an exception is raised by the __key function the key is
-        obtained as such:
-         ZeroDivisionError -> __exc_ZeroDivisionError"""
-        if self.__length == Len.INF:
-            raise UnlimitedStreamException
+    def split(self, __key: Callable[[_T], _H],/,*, exceptions:Literal["keep","discard","raise","stop"]="keep") -> dict[_H, Stream[_T]]:
+        ...
 
-        out: dict[_H, list[_T]] = {}
-        for elm in _loop(self.__iter):
-            try:
-                key = __key(elm)
-            except Exception as E:
-                match exceptions:
-                    case "keep":
-                        elm = StreamException(E, elm)
-                        key = f"__exc_{E.__class__.__name__}"
-                        if key not in out:
-                            out[key] = list((elm,))
-                        else:
-                            out[key].append(elm)
-                    case "discard":
-                        continue
-                    case "raise":
-                        raise E
-                    case "stop":
-                        self.__iter.close()
-            else:
-                if key not in out:
-                    out[key] = list((elm,))
-                else:
-                    out[key].append(elm)
-        return {k: Stream(vs) for k, vs in out.items()}
+#     def split(
+#         self,
+#         __key: Callable[[_T], _H],
+#         /,
+#         *,
+#         exceptions: Literal["keep", "discard", "raise", "stop"] = "keep",
+#     ) -> dict[_H, Stream[_T]]:
+#         """The method returns a dict of streams. The streams are obtained by grouping,
+#         in order, all elements returning the same value when the __key function is
+#         applied to them. If an exception is raised by the __key function the key is
+#         obtained as such:
+#          ZeroDivisionError -> __exc_ZeroDivisionError"""
+#         if self.__length == Len.INF:
+#             raise UnlimitedStreamException
 
-    def split_list(self, __key: Callable[[_T], _H]) -> dict[_H, list[_T]]:
-        """The method returns a dict of lists. The lists are obtained by grouping,
-        in order, all elements returning the same value when the __key function is
-        applied to them."""
-        return {k: s.list() for k, s in self.split(__key).items()}
+#         out: dict[_H, list[_T]] = {}
+#         for elm in _loop(self.__iter):
+#             try:
+#                 key = __key(elm)
+#             except Exception as E:
+#                 match exceptions:
+#                     case "keep":
+#                         elm = StreamException(E, elm)
+#                         key = f"__exc_{E.__class__.__name__}"
+#                         if key not in out:
+#                             out[key] = list((elm,))
+#                         else:
+#                             out[key].append(elm)
+#                     case "discard":
+#                         continue
+#                     case "raise":
+#                         raise E
+#                     case "stop":
+#                         self.__iter.close()
+#             else:
+#                 if key not in out:
+#                     out[key] = list((elm,))
+#                 else:
+#                     out[key].append(elm)
+#         return {k: Stream(vs) for k, vs in out.items()}
+
+#     def split_list(self, __key: Callable[[_T], _H]) -> dict[_H, list[_T]]:
+#         """The method returns a dict of lists. The lists are obtained by grouping,
+#         in order, all elements returning the same value when the __key function is
+#         applied to them."""
+#         return {k: s.list() for k, s in self.split(__key).items()}
 
     def __iter__(self) -> Iterator[_T]:
-        return _loop(self.__iter)
+        return self
 
+    def __next__(self) -> _T:
+        if self.__cache:
+            nx = self.__cache.pop(0)
+        else:
+            nx = self.__iter.__next__()
+        if isinstance(nx, StreamException):
+            raise nx.exc
+        return nx
+
+    def __next_sxc__(self) -> _T:
+        if self.__cache:
+            return self.__cache.pop(0)
+        else:
+            try:
+                return self.__iter.__next_sxc__()
+            except AttributeError:
+                return self.__iter.__next__()
+    
+    def __next_noch__(self) -> _T:
+        try:
+            return self.__iter.__next_noch__()
+        except AttributeError:
+            return self.__iter.__next__()
     # endregion
     # region Operations to output to text
 
@@ -1260,22 +1141,21 @@ class Stream(Generic[_T]):
         if self.__length == Len.INF:
             raise UnlimitedStreamException
 
-        def loop(__iter: Generator[_T, None, None]) -> Generator[_T, None, None]:
+        def loop(__iter: Stream[_T]) -> Generator[_T, None, None]:
             pre, frm, sep, end = _match_format(__format_spec)
             out = []
             try:
-                for elm in _loop(__iter):
+                for elm in __iter:
                     out.append(frm.format(elm))
                     yield elm
             except GeneratorExit:
                 out.append("...")
-                print(f"{pre}{sep.join(out)}{end}")
+                print(f"p:{pre}{sep.join(out)}{end}")
                 __iter.close()
                 return
-            print(f"{pre}{sep.join(out)}{end}")
+            print(f"p:{pre}{sep.join(out)}{end}")
 
-        self.__iter = loop(self.__iter)
-        return self
+        return Stream(loop(self))
 
     def __format__(self, __format_spec: str) -> str:
         """The method returns a string representation of the stream by consuming
@@ -1289,10 +1169,12 @@ class Stream(Generic[_T]):
 
     def __repr__(self) -> str:
         """The method implements the default python repr function."""
+        # return str(self.__cache) + '...'
         return self.__format__(DEFAULT_REPR_FORMAT)
 
     def __str__(self) -> str:
         """The method implements the default python str function."""
+        # return str(self.__cache) + '...'
         return self.__format__(DEFAULT_FORMAT)
 
     # endregion
@@ -1304,50 +1186,54 @@ class Stream(Generic[_T]):
         is marked as infinite. If for whatever reason you want to deal with infinity
         or the stream is wrongfully marked you can set the length with the Len enum
         or manually setting to:
-         - length = 1  : finite length
-         - length = 0  : unknown length
-         - length = -1 : infinite length"""
+            - length = 1  : finite length
+            - length = 0  : unknown length
+            - length = -1 : infinite length"""
         if length not in Len.__members__.values():
             raise ValueError
         self.__length = length
         return self
 
     # endregion
-    # region Caching methods
-
-    def list_copy(
-        self, list_cache: list[_T], _copy_method: Callable[[list], list] = None
-    ) -> Stream[_T]:
-        """The method consumes the stream and stores it into a list which reference
-        is passed to list_cache. The list is first cleared with the list.clear()
-        method, and the stream returned uses a shallow copy of the list. To use a
-        deep copy you can change the _copy_method of the function (default: list.copy)."""
-        if self.__length == Len.INF:
-            raise UnlimitedStreamException
-        if _copy_method is None:
-            _copy_method = list.copy
-        list_cache.clear()
-        list_cache.extend(self.__iter)
-        self.__iter = _loop(_copy_method(list_cache))
-        return self
-
     def reverse(self) -> Stream[_T]:
         """The method caches the stream and stores it onto al list, and iterates
         through it in reverse."""
         if self.__length == Len.INF:
             raise UnlimitedStreamException
-        list_cache = self.list()
-        self.__iter = _loop(reversed(list_cache))
-        return self
+        self.cache()
+        return Stream(reversed(self.__cache))
 
     def shuffle(self) -> Stream[_T]:
         """The method caches the stream and stores it onto al list, and returns
         a shuffled version of the list."""
         if self.__length == Len.INF:
             raise UnlimitedStreamException
-        list_cache = self.list()
-        self.__iter = _loop(shuffle(list_cache))
+        self.cache()
+        return Stream(shuffle(self.__cache))  # TODO: non mi piace molto
+
+    def cache(self, n: int = None) -> Stream[_T]:
+        """The method stores the values of the stream in its cache to potentially
+        speed up processing (e.g. evaluating during free time).
+        If n is not set then it caches the whole stream"""
+        if n is None:
+            if self.__length == Len.INF:
+                raise UnlimitedStreamException
+            try:
+                while True:
+                    self.__cache.append(self.__next_noch__())
+            except StopIteration:
+                ...
+        else:
+            for _ in range(n):
+                try:
+                    self.__cache.append(self.__iter.__next__())
+                except StopIteration:
+                    break
         return self
 
-    # endregion
-    ...
+    def close(self) -> None:
+        self.__cache.clear()
+        try:
+            self.__iter.close()
+        except AttributeError:
+            return
