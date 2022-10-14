@@ -26,9 +26,9 @@ def test_last() -> None:
     assert stream_last == 9
 
 
-def test_join() -> None:
-    stream_join = Stream.repeat("s").limit(20).join("")
-    assert stream_join == "ssssssssssssssssssss"
+# def test_join() -> None:
+#     stream_join = Stream.repeat("s").limit(20).join("")
+#     assert stream_join == "ssssssssssssssssssss"
 
 
 def test_sum() -> None:
